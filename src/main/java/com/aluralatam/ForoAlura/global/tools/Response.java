@@ -15,4 +15,5 @@ public class Response{
     public static final String UPDATED="RECURSO MODIFICADO EXITOSAMENTE.";
     public static final String NOT_CONFIRMED="RECURSO NO MODIFICADO.";
     public static final String ELIMINATED="RECURSO ELIMINADO EXITOSAMENTE.";
+    public static final String NUMBER_EXCEPTION="Numero de pagina y longitud deben ser enteros y positivos.";
 }

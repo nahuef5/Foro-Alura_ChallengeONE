@@ -21,6 +21,10 @@ public class Curso{
         this.categoria = dto.categoria();
         this.inactivo=false;
     }
+    public Curso(String nombre, String categoria){
+        this.nombre=nombre;
+        this.categoria=categoria;
+    }
     @Override
     public int hashCode() {
         final int prime = 31;

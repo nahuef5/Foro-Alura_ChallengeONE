@@ -78,9 +78,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never())
                 .save(any(Curso.class));
     }
-
     // TEST UPDATE METHOD
-
     @Test
     @DisplayName("Actualiza y retorna un ResponseEntity con status OK con un mensaje")
     void itShouldReturnResponseEntity_StatusOkOnUpdate() throws ResourceNotFoundException, EntityAlreadyExistsException{
@@ -132,9 +130,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository, never()).findById(id);
         verify(cursoRepository, never()).save(any(Curso.class));
     }
-
     // TEST ACTIVE METHOD
-
     @Test
     @DisplayName("Activa y retorna un ResponseEntity con status Accepted con un mensaje")
     void itShouldResponseEntity_StatusAcceptedOnActivate() throws ResourceNotFoundException, AccountActivationException{
@@ -179,9 +175,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(any(Curso.class));
     }
-
     // TEST DELETE METHOD
-
     @Test
     @DisplayName("Elimina de ddbb y retorna ResponseEntity con Status Accepted con mensaje")
     void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB()throws ResourceNotFoundException, NotConfirmedException{
@@ -229,15 +223,13 @@ public class CursoServiceImplTest {
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,never()).deleteById(id);
     }
-
     // TEST DISABLE METHOD
-
     @Test
     @DisplayName("Desactiva y retorna ResponseEntity con Status Accepted con mensaje")
     void itShouldReturnResponseEntity_StatusAcceptedOnDisable()throws ResourceNotFoundException, NotConfirmedException{
         //Arrange
-        boolean confirm=true;
-        DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
+        boolean inactivo=true;
+        DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,inactivo);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         //Act
         ResponseEntity<Response>responseEntity=cursoService.disable(disableDto);
@@ -298,9 +290,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(curso);
     }
-
     // TEST GET-BY-ID METHOD
-
     @Test
     @DisplayName("Obtiene por id y retorna un ResponseEntity Status FOUND con el curso")
     void itShouldReturnResponseEntity_StatusFoundOnGetById() throws ResourceNotFoundException{
@@ -327,9 +317,7 @@ public class CursoServiceImplTest {
         //verification
         verify(cursoRepository, times(1)).findById(id);
     }
-
     // TEST GET-BY-NOMBRE-AND-CATEGORIA METHOD
-
     @Test
     @DisplayName("Obtiene por nombre y categoria y retorna un ResponseEntity Status FOUND con el curso")
     void itShouldReturnResponseEntity_StatusFoundOnGetByNombreAndCategoria() throws ResourceNotFoundException{
@@ -350,139 +338,54 @@ public class CursoServiceImplTest {
     @DisplayName("No obtiene y lanza un ResourceNotFoundException cuando busca por nombre y categoria")
     void itShouldThrowResourceNotFoundExceptionOnGetByNombreAndCategoria(){
         //arrange
-        var getByNombre=this.nombre;
-        var getByCategoria=this.categoria;
+
         when(cursoRepository.findByNombreAndCategoria(anyString(),anyString())).thenReturn(Optional.empty());
         //act and asserts
         assertThrows(ResourceNotFoundException.class,
-                ()->cursoService.findByNombreAndCategoria(getByNombre,getByCategoria)
+                ()->cursoService.findByNombreAndCategoria(this.nombre,this.categoria)
         );
         //verification
-        verify(cursoRepository, times(1)).findByNombreAndCategoria(getByNombre,getByCategoria);
+        verify(cursoRepository, times(1)).findByNombreAndCategoria(this.nombre,this.categoria);
     }
-
-    // TEST GET-ALL-BY-NOMBRE-AND-PAGINATION METHOD
-
+    // TEST GET-ALL-BY-PAGINATION METHOD
     @Test
-    @DisplayName("Encuentra cursos por nombre y paginacion")
-    public void itShouldReturnPaginationOfAllCursosByNombre() throws ResourceNotFoundException, EmptyEntityListException {
+    @DisplayName("Encuentra cursos por paginacion")
+    void itShouldReturnPaginationOfActiveCursos() throws EmptyEntityListException {
         //ARRANGE
-        Pageable pageable = Pageable.unpaged();
-        //se crea un lista de cursos
-        curso.setInactivo(true);
+        var pageNumber = 1;
+        var pageSize = 15;
+
+        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
         List<Curso> cursos = Arrays.asList(
                 curso,
-                Curso.builder().id(2L).nombre(nombre).categoria("P-O-O").inactivo(true).build(),
+                Curso.builder().id(2L).nombre(this.nombre).categoria("JDBC").inactivo(true).build(),
                 Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build(),
-                Curso.builder().id(4L).nombre(nombre).categoria("JDBC").inactivo(false).build()
+                Curso.builder().id(4L).nombre(this.nombre).categoria("JUnit").inactivo(false).build()
         );
-        //generamos pagina de cursos
-        Page<Curso> cursoPage = new PageImpl<>(cursos, pageable, cursos.size());
-
-        when(cursoRepository.existsByNombre(nombre)).thenReturn(true);
-        when(cursoRepository.search(nombre, pageable)).thenReturn(cursoPage);
+        Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
+        when(cursoRepository.findAll(pageRequest)).thenReturn(cursoPage);
         //ACT
-        ResponseEntity<Page<Curso>> responseEntity = cursoService
-                .findAllByNombreAndPagination(nombre, pageable);
-
-        Page<Curso>responseBody = responseEntity.getBody();
+        ResponseEntity<List<Curso>>responseEntity=
+                cursoService.findAllByPagination(pageNumber+"", pageSize+"");
+        List<Curso> responseBody=responseEntity.getBody();
         //ASSERTS
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         assertNotNull(responseBody);
         assertFalse(responseBody.isEmpty());
-        assertEquals(1, responseBody.getTotalElements());
+        assertEquals(2, responseBody.size());
 
         //recorremos cada elemento de la pagina y cercioramos que inactivo==false
-        responseBody.forEach(curso->assertFalse(curso.isInactivo()));
-        //lista de los cursos filtrados
-        List<Curso> filteredCourses = responseEntity.getBody().getContent();
-        //creamos una lista de cursos no filtrados con nombre distinto o inactivo==true
-        List<Curso> unfilteredCourses = cursos.stream()
-                .filter(
-                        curso->
-                                curso.isInactivo()==true
-                                        ||
-                                        !curso.getNombre().equals(nombre)
-                )
+        responseBody.forEach(curso -> assertFalse(curso.isInactivo()));
+        //lista de cursos filtrados
+        List<Curso> filteredCourses = cursos.stream()
+                .filter(Curso::isInactivo)
                 .toList();
-        var expected=unfilteredCourses.size();
-        var actual=cursos.size() - filteredCourses.size();
-        assertEquals(expected, actual);
-        System.out.println("Paginacion por nombre");
-        System.out.println("\n Q CURSOS FILTRADOS: "+filteredCourses.size());
-        System.out.println("\n Q CURSOS NO FILTRADOS: "+expected);
-        System.out.println("\n DIFERENCIA ENTRE LISTA CURSO PRINCIPAL Y Q CURSOS FILTRADOS: "+actual);
-
-        //VERIFICATIONS
-        verify(cursoRepository, times(1)).existsByNombre(nombre);
-        verify(cursoRepository).search(nombre,pageable);
-    }
-    @Test
-    @DisplayName("No encuentra cursos por ese nombrey lanza ResourceNotFoundException")
-    void itShouldThrowResourceNotFoundExceptionOnFindAllCursosByNombreAndPagination() {
-        //arrange
-        var getByombre = this.nombre;
-        Pageable pageable = PageRequest.of(0, 10);
-        when(cursoRepository.existsByNombre(anyString())).thenReturn(false);
-        //act and assert
-        assertThrows(ResourceNotFoundException.class,
-                () -> cursoService.findAllByNombreAndPagination(getByombre, pageable)
-        );
-        //verifications
-        verify(cursoRepository, times(1)).existsByNombre(getByombre);
-        verify(cursoRepository, never()).search(getByombre,pageable);
-    }
-    @Test
-    @DisplayName("Lista vacia cursos con ese nombre, lanza EmptyEntityListException")
-    void itShouldThrowEmptyEntityListExceptionOnFindAllCursosByNombreAndPagination() {
-        //arrange
-        Pageable pageable = PageRequest.of(0, 10);
-        when(cursoRepository.existsByNombre(anyString())).thenReturn(true);
-        when(cursoRepository.search(anyString(), any(Pageable.class))).thenReturn(Page.empty());
-        //act and assert
-        assertThrows(EmptyEntityListException.class,
-                () -> cursoService.findAllByNombreAndPagination(nombre, pageable)
-        );
-        //verifications
-        verify(cursoRepository).search(eq(nombre),eq(pageable));
-    }
-
-    // TEST GET-ALL-BY-NOMBRE-AND-PAGINATION METHOD
-
-    @Test
-    @DisplayName("Encuentra cursos por paginacion")
-    public void itShouldReturnPaginationOfAllCursos() throws EmptyEntityListException {
-        //arrange
-        Pageable pageable = Pageable.unpaged();
-        List<Curso> cursos = Arrays.asList(
-                curso,
-                Curso.builder().id(2L).nombre(nombre).categoria("JDBC").inactivo(true).build(),
-                Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build(),
-                Curso.builder().id(4L).nombre(nombre).categoria("JUnit").inactivo(false).build()
-        );
-        Page<Curso> cursoPage = new PageImpl<>(cursos, pageable, cursos.size());
-        when(cursoRepository.findAll(pageable)).thenReturn(cursoPage);
-        //act
-        ResponseEntity<Page<Curso>> responseEntity = cursoService
-                .findAllByPagination(pageable);
-        Page<Curso>responseBody = responseEntity.getBody();
-        //asserts
-        assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseBody);
-        assertFalse(responseBody.isEmpty());
-        assertEquals(2, responseBody.getTotalElements());
-
-        //recorremos cada elemento de la pagina y cercioramos que inactivo==false
-        responseBody.forEach(curso->assertFalse(curso.isInactivo()));
-        //lista de los cursos filtrados
-        List<Curso> filteredCourses = responseEntity.getBody().getContent();
         //creamos una lista de cursos no filtrados con inactivo==true
         List<Curso> unfilteredCourses = cursos.stream()
                 .filter(
                         curso->curso.isInactivo()==true
                 )
                 .toList();
-
         var expected=unfilteredCourses.size();
         var actual=cursos.size() - filteredCourses.size();
         assertEquals(expected, actual);
@@ -491,19 +394,163 @@ public class CursoServiceImplTest {
         System.out.println("\n Q CURSOS NO FILTRADOS: "+expected);
         System.out.println("\n DIFERENCIA ENTRE LISTA CURSO PRINCIPAL Y Q CURSOS FILTRADOS: "+actual);
         //verifications
-        verify(cursoRepository).findAll(pageable);
+        verify(cursoRepository).findAll(pageRequest);
     }
     @Test
-    @DisplayName("Lista vacia cursos, lanza EmptyEntityListException")
+    @DisplayName("Lista vacía de cursos, lanza EmptyEntityListException")
     void itShouldThrowEmptyEntityListExceptionOnFindAllCursosByPagination() {
         //arrange
-        Pageable pageable = Pageable.unpaged();
-        when(cursoRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
+        var pageNumber = 1;
+        var pageSize = 15;
+        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
+        when(cursoRepository.findAll(pageRequest)).thenReturn(Page.empty());
         //act and assert
         assertThrows(EmptyEntityListException.class,
-                () -> cursoService.findAllByPagination(pageable)
+                ()->cursoService.findAllByPagination(pageNumber+"", pageSize+"")
+        );
+        //verificación
+        verify(cursoRepository).findAll(pageRequest);
+    }
+    @Test
+    @DisplayName("pageNumber o pageSize menores que 1")
+    void itShouldReturnBadRequestWhenPageOrSizeLessThanOne() throws EmptyEntityListException{
+        //arrange
+        var pageNumber = -1;
+        var pageSize = 15;
+        //act and asserts
+        assertThrows(IllegalArgumentException.class,
+                ()->cursoService.findAllByPagination(pageNumber+"",pageSize+"")
         );
         //verification
-        verify(cursoRepository).findAll(eq(pageable));
+        verify(cursoRepository, never()).findAll(any(Pageable.class));
+    }
+    @Test
+    @DisplayName("Lanza un NumberFormatException al querer traer todos los cursos")
+    void itShouldReturnBadRequestOnNumberFormatExceptionOnFindALl() throws EmptyEntityListException {
+        //arrange
+        var pageNumber = "asd";
+        var pageSize = 15;
+        //act and asserts
+        assertThrows(NumberFormatException.class,
+                ()->cursoService.findAllByPagination(pageNumber+"",pageSize+"")
+        );
+        //verification
+        verify(cursoRepository, never()).findAll(any(Pageable.class));
+    }
+    // TEST GET-ALL-BY-NOMBRE-AND-PAGINATION METHOD
+    @Test
+    @DisplayName("Encuentra todos los cursos con un nombre por paginacion")
+    void itShouldReturnPaginationOfCursosByNombre()throws ResourceNotFoundException {
+        //ARRANGE
+        var pageNumber = "1";
+        var pageSize = "15";
+        var numPag=Integer.parseInt(pageNumber);
+        var tamPag=Integer.parseInt(pageSize);
+
+        PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
+        List<Curso> cursos = Arrays.asList(
+                curso,
+                Curso.builder().id(2L).nombre(nombre).categoria("JDBC").inactivo(true).build(),
+                Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build(),
+                Curso.builder().id(4L).nombre(nombre).categoria("JUnit").inactivo(false).build()
+        );
+        Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
+        when(cursoRepository.existsByNombre(this.nombre)).thenReturn(true);
+        when(cursoRepository.search(this.nombre, pageRequest)).thenReturn(cursoPage);
+        //ACT
+        ResponseEntity<List<Curso>> responseEntity=
+                cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
+        List<Curso>responseBody=responseEntity.getBody();
+        //ASSERTS
+        assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
+        assertNotNull(responseBody);
+        assertFalse(responseBody.isEmpty());
+        assertEquals(2, responseBody.size());
+
+        //recorremos cada elemento de la pagina y cercioramos que inactivo==false
+        responseBody.forEach(curso -> assertFalse(curso.isInactivo()));
+        //lista de cursos filtrados
+        List<Curso> filteredCourses = cursos.stream()
+                .filter(Curso::isInactivo)
+                .toList();
+        //creamos una lista de cursos no filtrados con nombre distinto o inactivo==true
+        List<Curso> unfilteredCourses = cursos.stream()
+                .filter(
+                        curso->
+                                curso.isInactivo()==true
+                                        ||
+                                !curso.getNombre().equals(nombre)
+                )
+                .toList();
+        var expected=unfilteredCourses.size();
+        var actual=cursos.size() - filteredCourses.size();
+        assertEquals(expected, actual);
+        System.out.println("Solo paginacion");
+        System.out.println("\n Q CURSOS FILTRADOS: "+filteredCourses.size());
+        System.out.println("\n Q CURSOS NO FILTRADOS: "+expected);
+        System.out.println("\n DIFERENCIA ENTRE LISTA CURSO PRINCIPAL Y Q CURSOS FILTRADOS: "+actual);
+        //verifications
+        verify(cursoRepository, times(1)).existsByNombre(this.nombre);
+        verify(cursoRepository).search(this.nombre,pageRequest);
+    }
+    @Test
+    @DisplayName("No encuentra cursos por ese nombre y lanza ResourceNotFoundException")
+    void itShouldThrowResourceNotFoundExceptionWhenSearchingCursosByNombre() {
+        //arrange
+        var pageNumber = "1";
+        var pageSize = "15";
+        var numPag=Integer.parseInt(pageNumber);
+        var tamPag=Integer.parseInt(pageSize);
+
+        Pageable pageable = PageRequest.of(numPag-1, tamPag);
+        when(cursoRepository.existsByNombre(anyString())).thenReturn(false);
+        //act and assert
+        assertThrows(ResourceNotFoundException.class,
+                () -> cursoService.findAllByNombreAndPagination(this.nombre, pageNumber,pageSize)
+        );
+        //verifications
+        verify(cursoRepository, times(1)).existsByNombre(this.nombre);
+        verify(cursoRepository, never()).search(this.nombre,pageable);
+    }
+
+    @Test
+    @DisplayName("Lanza un NumberFormatException al buscar lista por nombre")
+    void itShouldReturnBadRequestWhenSizeIsLessThanOneWhenSearchingByNombre(){
+        //arrange
+        var pageNumber ="15";
+        var pageSize ="asd";
+        //act and asserts
+        assertThrows(NumberFormatException.class, () -> {
+            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
+        });
+        //verification
+        verify(cursoRepository, never()).existsByNombre(this.nombre);
+        verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("Lanza un NumberFormatException al buscar lista por nombre")
+    void itShouldReturnBadRequestWhenPageIsLessThanOneWhenSearchingByNombre(){
+        //arrange
+        var pageNumber ="asd";
+        var pageSize ="15";
+        //act and asserts
+        assertThrows(NumberFormatException.class, () -> {
+            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
+        });
+        //verification
+        verify(cursoRepository, never()).existsByNombre(this.nombre);
+        verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
+    }
+    @Test
+    @DisplayName("pageNumber o pageSize menores a 1 cuando busca cursos por nombre")
+    void itShouldReturnBadRequestWhenPageOrSizeLessThanOneWhenFindByNombre(){
+        //arrange
+        var pageNumber = "-1";
+        var pageSize = "15";
+        //assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
+        });
     }
 }

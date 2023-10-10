@@ -5,5 +5,5 @@ public record DeleteOrDesableCursoDto(
         @Min(0)
         Long id,
         @NotNull
-        boolean confirm
+        boolean inactivo
 ){}

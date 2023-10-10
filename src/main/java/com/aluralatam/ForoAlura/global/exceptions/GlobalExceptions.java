@@ -38,6 +38,24 @@ public class GlobalExceptions{
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
     }
+    @ExceptionHandler(IsNotPositiveException.class)
+    public ResponseEntity<Response> throwInvalidValuesException(
+            IsNotPositiveException e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+    @ExceptionHandler(NumberFormatException.class)
+    public ResponseEntity<Response> throwIsNotNumberException(
+            NumberFormatException e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Response> throwIllegalArgumentException(
+            IllegalArgumentException e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Response>throwMethodArgumentNotValid
             (MethodArgumentNotValidException e){

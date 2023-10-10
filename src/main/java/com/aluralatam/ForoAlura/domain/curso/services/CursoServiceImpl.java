@@ -9,11 +9,21 @@ import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class CursoServiceImpl implements CursoService {
     private final CursoRepository cursoRepository;
+    private boolean isInteger(String string){
+        try{
+            Integer.parseInt(string);
+            return true;
+        }catch (NumberFormatException e) {
+            throw new NumberFormatException(Response.NUMBER_EXCEPTION);
+        }
+    }
     @Transactional(rollbackFor = EntityAlreadyExistsException.class)
     @Override
     public ResponseEntity<Response> save(CUCursoDto dto) throws EntityAlreadyExistsException {
@@ -46,7 +56,7 @@ public class CursoServiceImpl implements CursoService {
     @Override
     public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, NotConfirmedException {
         var id = dto.id();
-        var confirm = dto.confirm();
+        var confirm = dto.inactivo();
         if (!cursoRepository.existsById(id))
             throw new ResourceNotFoundException(Response.NO_ID_EXISTS);
         if (!confirm)
@@ -59,12 +69,12 @@ public class CursoServiceImpl implements CursoService {
     @Override
     public ResponseEntity<Response> disable(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, NotConfirmedException, AccountActivationException {
         var id = dto.id();
-        var confirm = dto.confirm();
+        var inactivo = dto.inactivo();
         Curso curso = cursoRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException(Response.NO_ID_EXISTS));
         if (curso.isInactivo() != false)
             throw new AccountActivationException("ESE RECURSO YA SE ENCUENTRA INACTIVO");
-        if (!confirm)
+        if (!inactivo)
             throw new NotConfirmedException(Response.NOT_CONFIRMED);
         curso.setInactivo(true);
         cursoRepository.save(curso);
@@ -100,29 +110,49 @@ public class CursoServiceImpl implements CursoService {
     }
     @Transactional(readOnly=true)
     @Override
-    public ResponseEntity<Page<Curso>> findAllByNombreAndPagination(String nombre, Pageable pageable) throws ResourceNotFoundException, EmptyEntityListException {
-        if(!cursoRepository.existsByNombre(nombre))
+    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(String nombre,String pageNumber,String pageSize) throws ResourceNotFoundException {
+        var numPag=Integer.parseInt(pageNumber);
+        var tamPag=Integer.parseInt(pageSize);
+        if (numPag < 1 || tamPag < 1){
+            throw new IllegalArgumentException(Response.NUMBER_EXCEPTION);
+        }
+        else if(!cursoRepository.existsByNombre(nombre)){
             throw new ResourceNotFoundException(Response.NO_PARAMETER_EXIST);
-        Page<Curso> cursoList=cursoRepository.search(nombre, pageable);
-        if(cursoList.isEmpty())
-            throw new EmptyEntityListException(Response.EMPTY_LIST);
-        Page<Curso> active=cursoList
+        }
+        else{
+            PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
+            Page<Curso> cursoList = cursoRepository.search(nombre, pageRequest);
+
+            List<Curso> cursos = cursoList.getContent()
                 .stream()
-                .filter(curso->curso.isInactivo()==false)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), PageImpl::new));
-        return ResponseEntity.status(HttpStatus.FOUND).body(active);
+                .filter(curso -> curso.isInactivo() == false)
+                .collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.FOUND).body(cursos);
+        }
     }
+    //proxima mejora crear una query desde la ddbb para que se haga el filtro desde ahi
+    //crear dos metodos para getAll
     @Transactional(readOnly=true)
     @Override
-    public ResponseEntity<Page<Curso>> findAllByPagination(Pageable pageable) throws EmptyEntityListException {
-        Page<Curso> cursoList=cursoRepository.findAll(pageable);
-        if(cursoList.isEmpty())
-            throw new EmptyEntityListException(Response.EMPTY_LIST);
-        Page<Curso> active=cursoList.stream()
-                .filter(curso->curso.isInactivo()==false)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), PageImpl::new));
-        return ResponseEntity.status(HttpStatus.FOUND).body(active);
+    public ResponseEntity<List<Curso>> findAllByPagination(
+            String pageNumber,
+            String pageSize
+    ){
+        var numPag=Integer.parseInt(pageNumber);
+        var tamPag=Integer.parseInt(pageSize);
+        if (numPag < 1 || tamPag < 1) {
+            throw new IllegalArgumentException(Response.NUMBER_EXCEPTION);
+        }else{
+            PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
+            Page<Curso> cursosPage = cursoRepository.findAll(pageRequest);
+
+            List<Curso> cursos = cursosPage.getContent()
+                    .stream()
+                    .filter(curso -> curso.isInactivo() == false)
+                    .collect(Collectors.toList());
+            if (cursos.isEmpty())
+                throw new EmptyEntityListException(Response.EMPTY_LIST);
+            return ResponseEntity.status(HttpStatus.FOUND).body(cursos);
+        }
     }
 }

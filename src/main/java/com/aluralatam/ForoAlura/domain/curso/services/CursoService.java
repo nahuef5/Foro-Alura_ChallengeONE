@@ -5,6 +5,9 @@ import com.aluralatam.ForoAlura.global.exceptions.*;
 import com.aluralatam.ForoAlura.global.tools.Response;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
 public interface CursoService{
     public ResponseEntity<Response> save(CUCursoDto dto)
             throws EntityAlreadyExistsException;
@@ -19,8 +22,6 @@ public interface CursoService{
     public ResponseEntity<Curso> findById(Long id)throws ResourceNotFoundException;
     public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria)
             throws ResourceNotFoundException;
-    public ResponseEntity<Page<Curso>> findAllByNombreAndPagination(String nombre, Pageable pageable)
-            throws ResourceNotFoundException, EmptyEntityListException;
-    public ResponseEntity<Page<Curso>> findAllByPagination(Pageable pageable)
-            throws EmptyEntityListException;
+    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(String nombre, String pageNumber,String pageSize) throws ResourceNotFoundException;
+    public ResponseEntity<List<Curso>> findAllByPagination(String pageNumber, String pageSize);
 }
