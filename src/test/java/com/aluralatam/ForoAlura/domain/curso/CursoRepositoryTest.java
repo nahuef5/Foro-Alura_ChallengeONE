@@ -1,7 +1,6 @@
 package com.aluralatam.ForoAlura.domain.curso;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-
 import com.aluralatam.ForoAlura.domain.curso.models.dtos.CUCursoDto;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
@@ -26,7 +25,6 @@ public class CursoRepositoryTest{
                 .categoria("Star-A1")
                 .inactivo(false)
                 .build();
-        //curso = new Curso(dto);
     }
 
     @AfterEach
@@ -34,68 +32,51 @@ public class CursoRepositoryTest{
         cursoRepository.deleteAll();
     }
     @Test
-    void debeCheckearSiNombreYCategoriaExiste(){
-        //given
+    void itShouldCheckIfCoursesExistByNameAndCategory(){
         var nombre="Java";
         var categoria="Star-A1";
         cursoRepository.save(curso);
-        //when
         boolean expected = cursoRepository.existsByNombreAndCategoria(nombre, categoria);
-        //then
         assertThat(expected).isTrue();
     }
     @Test
     @DisplayName("Prueba que verifica que no existe un curso con ese nombre y categoria")
-    void debeCheckearQueNoExisteNombreYCategoria(){
-        //given
+    void itShouldCheckThatCoursesDoNotExistByNameAndCategory(){
         var nombre="nombreTest";
         var categoria="categoriaTest";
-        //when
         boolean expected= cursoRepository.existsByNombreAndCategoria(nombre,categoria);
-        //then
         assertThat(expected).isFalse();
     }
     @Test
-    void debeCheckearSiNombreExiste(){
-        //given
+    void itShoulCheckIfCourseExistsByName(){
         var nombre="Java";
         cursoRepository.save(curso);
-        //when
         boolean expected = cursoRepository.existsByNombre(nombre);
-        //then
         assertThat(expected).isTrue();
     }
     @Test
-    void debeCheckearQueNoExisteNombre(){
-        //given
+    void itShouldCheckThatCourseDoesntExistsByName(){
         var nombre="nombreTest";
-        //when
         boolean expected= cursoRepository.existsByNombre(nombre);
-        //then
         assertThat(expected).isFalse();
     }
     @Test
-    void debeEncontrarCursosPorNombre() {
-        //given
+    void itShouldFindCoursesByName() {
         String nombreCurso = "Java";
         cursoRepository.save(curso);
-        //when
         Pageable pageable = PageRequest.of(0, 3);
         Page<Curso> cursos= cursoRepository.search(nombreCurso, pageable);
-        //then
         assertFalse(cursos.isEmpty());
-        //verifica si todos los elementos del stream cumplen con el nombre pasado
-        assertTrue(cursos.stream().allMatch(curso -> curso.getNombre().contains(nombreCurso)));
+        assertTrue(cursos.stream()
+                .allMatch(curso -> curso.getNombre()
+                        .contains(nombreCurso)));
     }
     @Test
-    void noDebeEncontrarCursosPorNombre() {
-        //given
+    void itShouldCheckThatNoCoursesAreFoundByName() {
         var nombre="nombre";
         cursoRepository.save(curso);
-        //when
         Pageable pageable = PageRequest.of(0, 3);
         Page<Curso> cursos= cursoRepository.search(nombre, pageable);
-        //then
         assertTrue(cursos.isEmpty());
     }
 }

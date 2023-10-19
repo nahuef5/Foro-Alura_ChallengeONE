@@ -3,38 +3,30 @@ import com.aluralatam.ForoAlura.domain.curso.models.dtos.*;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
-import com.aluralatam.ForoAlura.global.tools.Response;
+import com.aluralatam.ForoAlura.global.tools.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class CursoServiceImpl implements CursoService {
     private final CursoRepository cursoRepository;
-    private boolean isInteger(String string){
-        try{
-            Integer.parseInt(string);
-            return true;
-        }catch (NumberFormatException e) {
-            throw new NumberFormatException(Response.NUMBER_EXCEPTION);
-        }
-    }
+
     @Transactional(rollbackFor = EntityAlreadyExistsException.class)
     @Override
     public ResponseEntity<Response> save(CUCursoDto dto) throws EntityAlreadyExistsException {
         var nombre = dto.nombre();
         var categoria = dto.categoria();
         if (cursoRepository.existsByNombreAndCategoria(nombre, categoria))
-            throw new EntityAlreadyExistsException(Response.ALREADY_EXIST);
+            throw new EntityAlreadyExistsException(Message.ALREADY_EXIST);
         Curso curso = new Curso(dto);
         cursoRepository.save(curso);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new Response(HttpStatus.CREATED, Response.CREATED));
+                .body(new Response(HttpStatus.CREATED, Message.CREATED));
     }
     @Transactional(rollbackFor = EntityAlreadyExistsException.class)
     @Override
@@ -42,70 +34,70 @@ public class CursoServiceImpl implements CursoService {
         var nombre = dto.nombre();
         var categoria = dto.categoria();
         if (!cursoRepository.existsById(id))
-            throw new ResourceNotFoundException(Response.NO_ID_EXISTS);
+            throw new ResourceNotFoundException(Message.NO_ID_EXISTS);
         if (cursoRepository.existsByNombreAndCategoria(nombre, categoria))
-            throw new EntityAlreadyExistsException(Response.ALREADY_EXIST);
+            throw new EntityAlreadyExistsException(Message.ALREADY_EXIST);
         Curso curso = cursoRepository.findById(id).get();
         curso.setNombre(nombre);
         curso.setCategoria(categoria);
         cursoRepository.save(curso);
         return ResponseEntity.ok()
-                .body(new Response(HttpStatus.OK, Response.UPDATED));
+                .body(new Response(HttpStatus.OK, Message.UPDATED));
     }
-    @Transactional(rollbackFor = NotConfirmedException.class)
+    @Transactional(rollbackFor = BusinessRuleException.class)
     @Override
-    public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, NotConfirmedException {
+    public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, BusinessRuleException {
         var id = dto.id();
         var confirm = dto.inactivo();
         if (!cursoRepository.existsById(id))
-            throw new ResourceNotFoundException(Response.NO_ID_EXISTS);
+            throw new ResourceNotFoundException(Message.NO_ID_EXISTS);
         if (!confirm)
-            throw new NotConfirmedException(Response.NOT_CONFIRMED);
+            throw new BusinessRuleException(Message.NOT_CONFIRMED);
         cursoRepository.deleteById(id);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new Response(HttpStatus.ACCEPTED, Response.ELIMINATED));
+                .body(new Response(HttpStatus.ACCEPTED, Message.ELIMINATED));
     }
-    @Transactional(rollbackFor = NotConfirmedException.class)
+    @Transactional(rollbackFor = BusinessRuleException.class)
     @Override
-    public ResponseEntity<Response> disable(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, NotConfirmedException, AccountActivationException {
+    public ResponseEntity<Response> disable(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, BusinessRuleException, AccountActivationException {
         var id = dto.id();
         var inactivo = dto.inactivo();
         Curso curso = cursoRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException(Response.NO_ID_EXISTS));
+                () -> new ResourceNotFoundException(Message.NO_ID_EXISTS));
         if (curso.isInactivo() != false)
-            throw new AccountActivationException("ESE RECURSO YA SE ENCUENTRA INACTIVO");
+            throw new AccountActivationException(Message.RESOURCE_ALREADY_INACTIVED);
         if (!inactivo)
-            throw new NotConfirmedException(Response.NOT_CONFIRMED);
+            throw new BusinessRuleException(Message.NOT_CONFIRMED);
         curso.setInactivo(true);
         cursoRepository.save(curso);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new Response(HttpStatus.ACCEPTED, Response.ELIMINATED));
+                .body(new Response(HttpStatus.ACCEPTED, Message.ELIMINATED));
     }
     @Transactional(rollbackFor = AccountActivationException.class)
     @Override
     public ResponseEntity<Response> activate(Long id) throws ResourceNotFoundException, AccountActivationException {
         Curso curso = cursoRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException(Response.NO_ID_EXISTS)
+                () -> new ResourceNotFoundException(Message.NO_ID_EXISTS)
         );
         if (!curso.isInactivo())
-            throw new AccountActivationException("ESE RECURSO YA SE ENCUENTRA ACTIVO");
+            throw new AccountActivationException(Message.RESOURCE_ALREADY_ACTIVED);
         curso.setInactivo(false);
         cursoRepository.save(curso);
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new Response(HttpStatus.ACCEPTED, "RECURSO REACTIVADO EXITOSAMENTE"));
+                .body(new Response(HttpStatus.ACCEPTED, Message.REACTIVATED_RESOURCE));
     }
     @Transactional(readOnly = true)
     @Override
     public ResponseEntity<Curso> findById(Long id) throws ResourceNotFoundException {
         Curso curso = cursoRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException(Response.NO_ID_EXISTS));
+                () -> new ResourceNotFoundException(Message.NO_ID_EXISTS));
         return ResponseEntity.status(HttpStatus.FOUND).body(curso);
     }
     @Transactional(readOnly=true)
     @Override
     public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria) throws ResourceNotFoundException {
         Curso curso=cursoRepository.findByNombreAndCategoria(nombre, categoria).orElseThrow(
-                ()->new ResourceNotFoundException(Response.NO_PARAMETER_EXIST));
+                ()->new ResourceNotFoundException(Message.NO_PARAMETER_EXIST));
         return ResponseEntity.status(HttpStatus.FOUND).body(curso);
     }
     @Transactional(readOnly=true)
@@ -114,10 +106,10 @@ public class CursoServiceImpl implements CursoService {
         var numPag=Integer.parseInt(pageNumber);
         var tamPag=Integer.parseInt(pageSize);
         if (numPag < 1 || tamPag < 1){
-            throw new IllegalArgumentException(Response.NUMBER_EXCEPTION);
+            throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
         }
         else if(!cursoRepository.existsByNombre(nombre)){
-            throw new ResourceNotFoundException(Response.NO_PARAMETER_EXIST);
+            throw new ResourceNotFoundException(Message.NO_PARAMETER_EXIST);
         }
         else{
             PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
@@ -141,7 +133,7 @@ public class CursoServiceImpl implements CursoService {
         var numPag=Integer.parseInt(pageNumber);
         var tamPag=Integer.parseInt(pageSize);
         if (numPag < 1 || tamPag < 1) {
-            throw new IllegalArgumentException(Response.NUMBER_EXCEPTION);
+            throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
         }else{
             PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
             Page<Curso> cursosPage = cursoRepository.findAll(pageRequest);
@@ -151,7 +143,7 @@ public class CursoServiceImpl implements CursoService {
                     .filter(curso -> curso.isInactivo() == false)
                     .collect(Collectors.toList());
             if (cursos.isEmpty())
-                throw new EmptyEntityListException(Response.EMPTY_LIST);
+                throw new EmptyEntityListException(Message.EMPTY_LIST);
             return ResponseEntity.status(HttpStatus.FOUND).body(cursos);
         }
     }

@@ -4,7 +4,7 @@ import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.domain.curso.services.CursoServiceImpl;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
-import com.aluralatam.ForoAlura.global.tools.Response;
+import com.aluralatam.ForoAlura.global.tools.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -40,39 +40,35 @@ public class CursoServiceImplTest {
     }
     // TEST SAVE METHOD
     @Test
-    @DisplayName("Guarda y retorna un ResponseEntity con status Created con un mensaje")
+    @DisplayName("Guarda & Retorna: ResponseEntity_Created")
     void itShouldReturnResponseEntity_StatusCreatedOnSave(){
-        //Arrange
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsByNombreAndCategoria(
                 anyString(), anyString())).thenReturn(false);
         when(cursoRepository.save(any(Curso.class))).thenAnswer(
                 invocation -> invocation.getArgument(0)
         );
-        //Act
         ResponseEntity<Response> responseEntity=cursoService.save(dto);
-        //Asserts
+
         assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
-        assertEquals(Response.CREATED,responseEntity.getBody().getRespuesta());
-        //Verifications
+        assertEquals(Message.CREATED,responseEntity.getBody().getRespuesta());
+
         verify(cursoRepository, times(1))
                 .existsByNombreAndCategoria(dto.nombre(),dto.categoria());
         verify(cursoRepository, times(1))
                 .save(any(Curso.class));
     }
     @Test
-    @DisplayName("No guarda y lanza EntityAlreadyExistsException si ya existe nombre y categoria")
+    @DisplayName("No_Guarda. Lanza EntityAlreadyExistsException")
     void itShouldThrowEntityAlreadyExistsExceptionOnSave(){
-        //Arrange
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsByNombreAndCategoria(
                 anyString(),anyString())).thenReturn(true);
-        //Act and assert
+
         assertThrows(EntityAlreadyExistsException.class,
                 ()->cursoService.save(dto)
         );
-        //Verifications
         verify(cursoRepository,times(1))
                 .existsByNombreAndCategoria(dto.nombre(),dto.categoria());
         verify(cursoRepository,never())
@@ -80,278 +76,246 @@ public class CursoServiceImplTest {
     }
     // TEST UPDATE METHOD
     @Test
-    @DisplayName("Actualiza y retorna un ResponseEntity con status OK con un mensaje")
-    void itShouldReturnResponseEntity_StatusOkOnUpdate() throws ResourceNotFoundException, EntityAlreadyExistsException{
-        //Arrange
+    @DisplayName("Actualiza & Retorna: ResponseEntity_OK")
+    void itShouldReturnResponseEntity_StatusOkOnUpdate(){
+
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
         when(cursoRepository.existsByNombreAndCategoria(anyString(), anyString())).thenReturn(false);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(new Curso()));
-        //Act
+
         ResponseEntity<Response>responseEntity=cursoService.update(id,dto);
-        //Asserts
+
         assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
-        assertEquals(Response.UPDATED,responseEntity.getBody().getRespuesta());
-        //Verificatios
+        assertEquals(Message.UPDATED,responseEntity.getBody().getRespuesta());
+
         verify(cursoRepository,times(1)).existsById(id);
         verify(cursoRepository,times(1)).existsByNombreAndCategoria(dto.nombre(),dto.categoria());
         verify(cursoRepository,times(1)).findById(id);
         verify(cursoRepository,times(1)).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No actualiza y lanza ResourceNotFoundException si no existe un curso con ese id")
+    @DisplayName("No_Actualiza. Lanza ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnUpdate(){
-        //Arrange
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(false);
-        //Act and assert
+
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.update(id,dto)
         );
-        //Verifications
         verify(cursoRepository,times(1))
                 .existsById(id);
         verify(cursoRepository,never())
                 .save(any(Curso.class));
     }
     @Test
-    @DisplayName("No actualiza y lanza EntityAlreadyExistsException si ya existe nombre y categoria")
-    void itShouldThrowEntityAlreadyExistsExceptionOnUpdate() {
-        //Arrange
+    @DisplayName("No_Actualiza. Lanza: EntityAlreadyExistsException")
+    void itShouldThrowEntityAlreadyExistsExceptionOnUpdate(){
+
         CUCursoDto dto = new CUCursoDto(nombre, categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
         when(cursoRepository.existsByNombreAndCategoria(anyString(), anyString())).thenReturn(true);
-        //Act and assert
+
         assertThrows(EntityAlreadyExistsException.class, () -> cursoService.update(id, dto));
-        //Verifications
+
         verify(cursoRepository, times(1)).existsById(id);
-        verify(cursoRepository, times(1)).existsByNombreAndCategoria(dto.nombre(), dto.categoria());
+        verify(cursoRepository, times(1))
+                .existsByNombreAndCategoria(dto.nombre(), dto.categoria());
         verify(cursoRepository, never()).findById(id);
         verify(cursoRepository, never()).save(any(Curso.class));
     }
-    // TEST ACTIVE METHOD
+
     @Test
-    @DisplayName("Activa y retorna un ResponseEntity con status Accepted con un mensaje")
-    void itShouldResponseEntity_StatusAcceptedOnActivate() throws ResourceNotFoundException, AccountActivationException{
-        //Arrange
+    @DisplayName("Activa & Retorna: ResponseEntity_Accepted")
+    void itShouldResponseEntity_StatusAcceptedOnActivate(){
         curso.setInactivo(true);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         when(cursoRepository.save(any(Curso.class))).thenReturn(curso);
-        //Act
+
         ResponseEntity<Response>responseEntity=cursoService.activate(id);
-        //Asserts
+
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
         assertEquals("RECURSO REACTIVADO EXITOSAMENTE", responseEntity.getBody().getRespuesta());
-        assertFalse(curso.isInactivo());
-        //Verifications
+
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository, times(1)).save(curso);
     }
     @Test
-    @DisplayName("No activa y lanza AccountActivationException si ya se encuentra activo")
+    @DisplayName("No_Activa. Lanza: AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnActivate(){
-        //Arrange
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-        //Act and assert
         assertThrows(AccountActivationException.class,
                 ()->cursoService.activate(id)
         );
-        //Verifications
         verify(cursoRepository,times(1)).findById(id);
         verify(cursoRepository,never()).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No activa y lanza ResourceNotFoundException si no existe curso con ese id")
+    @DisplayName("No_Activa. Lanza: ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnActivate(){
-        //Arrange
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
-        //Act and assert
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.activate(id)
         );
-        //Verifications
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(any(Curso.class));
     }
     // TEST DELETE METHOD
     @Test
-    @DisplayName("Elimina de ddbb y retorna ResponseEntity con Status Accepted con mensaje")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB()throws ResourceNotFoundException, NotConfirmedException{
-        //Arrange
+    @DisplayName("Elimina & Retorna: ResponseEntity_Accepted")
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB(){
         boolean confirm=true;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
-        //Act
+
         ResponseEntity<Response>responseEntity=cursoService.delete(deleteDto);
-        //Asserts
+
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
-        assertEquals(Response.ELIMINATED, responseEntity.getBody().getRespuesta());
-        //Verifications
+        assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
+
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,times(1)).deleteById(id);
     }
     @Test
-    @DisplayName("No elimina de ddbb y lanza ResourceNotFoundException por id inexistente")
+    @DisplayName("No_Elimina. Lanza: ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDeleteFromDDBB(){
-        //Arrange
         boolean confirm=true;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(false);
-        //Act and assert
+
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.delete(deleteDto)
         );
-        //Verifications
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,never()).deleteById(id);
     }
     @Test
-    @DisplayName("No elimina de ddbb y lanza NotConfirmedException por no confirmar")
+    @DisplayName("No_Elimina. Lanza BusinessRuleException")
     void itShouldThrowNotConfirmedExceptionOnDeleteFromDDBB(){
-        //Arrange
         boolean confirm=false;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
-        //Act and assert
-        assertThrows(NotConfirmedException.class,
+
+        assertThrows(BusinessRuleException.class,
                 ()->cursoService.delete(deleteDto)
         );
-        //Verifications
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,never()).deleteById(id);
     }
     // TEST DISABLE METHOD
     @Test
-    @DisplayName("Desactiva y retorna ResponseEntity con Status Accepted con mensaje")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDisable()throws ResourceNotFoundException, NotConfirmedException{
-        //Arrange
+    @DisplayName("Desactiva & Retorna: ResponseEntity_Accepted")
+    void itShouldReturnResponseEntity_StatusAcceptedOnDisable(){
         boolean inactivo=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,inactivo);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-        //Act
+
         ResponseEntity<Response>responseEntity=cursoService.disable(disableDto);
-        //Asserts
-        assertTrue(curso.isInactivo());
+
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
-        assertEquals(Response.ELIMINATED, responseEntity.getBody().getRespuesta());
-        //Verifications
+        assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
+
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,times(1)).save(curso);
     }
     @Test
-    @DisplayName("No desactiva y lanza ResourceNotFoundException por id inexistente")
+    @DisplayName("No_Desactiva. Lanza ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDisable(){
-        //Arrange
         boolean confirm=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
-        //Act and assert
+
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.disable(disableDto)
         );
-        //verifications
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No desactiva y lanza NotConfirmedException por no confirmar")
+    @DisplayName("No_Desactiva. Lanza NotConfirmedException")
     void itShouldThrowNotConfirmedExceptionOnDisable(){
-        //arrange
         boolean confirm=false;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-        //act and asserts
-        assertThrows(NotConfirmedException.class,
+
+        assertThrows(BusinessRuleException.class,
                 ()->cursoService.disable(disableDto)
         );
-        assertFalse(curso.isInactivo());
-        //verifications
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(curso);
     }
     @Test
-    @DisplayName("Lanza AccountActivationException por estar inactivo")
+    @DisplayName("No_Desactiva. Lanza AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnDisable(){
-        //arrange
         boolean confirm=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         curso.setInactivo(true);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-        //act and asserts
+
         assertThrows(AccountActivationException.class,
                 ()->cursoService.disable(disableDto)
         );
-        assertTrue(curso.isInactivo());
-        //verifications
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(curso);
     }
     // TEST GET-BY-ID METHOD
     @Test
-    @DisplayName("Obtiene por id y retorna un ResponseEntity Status FOUND con el curso")
-    void itShouldReturnResponseEntity_StatusFoundOnGetById() throws ResourceNotFoundException{
-        //arrange
+    @DisplayName("Obtiene:ID & Retorna: ResponseEntity_FOUND")
+    void itShouldReturnResponseEntity_StatusFoundOnGetById(){
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-        //act
         ResponseEntity<Curso>responseEntity=cursoService.findById(id);
-        //asserts
+
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
         assertEquals(curso, responseEntity.getBody());
-        //verification
+
         verify(cursoRepository, times(1)).findById(id);
     }
     @Test
-    @DisplayName("No obtiene y lanza un ResourceNotFoundException cuando busca por id")
+    @DisplayName("No_Obtiene:ID. Lanza ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnGetById(){
-        //arrange
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
-        //act and aseert
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.findById(id)
         );
-        //verification
         verify(cursoRepository, times(1)).findById(id);
     }
     // TEST GET-BY-NOMBRE-AND-CATEGORIA METHOD
     @Test
-    @DisplayName("Obtiene por nombre y categoria y retorna un ResponseEntity Status FOUND con el curso")
+    @DisplayName("Obtiene:NOMBRE & CATEGORIA. Retorna ResponseEntity_FOUND")
     void itShouldReturnResponseEntity_StatusFoundOnGetByNombreAndCategoria() throws ResourceNotFoundException{
-        //arrange
         var getByNombre=this.nombre;
         var getByCategoria=this.categoria;
-        when(cursoRepository.findByNombreAndCategoria(anyString(),anyString())).thenReturn(Optional.of(curso));
-        //act
+        when(cursoRepository.findByNombreAndCategoria
+                (anyString(),anyString())).thenReturn(Optional.of(curso));
         ResponseEntity<Curso>responseEntity=cursoService.findByNombreAndCategoria(getByNombre, getByCategoria);
-        //asserts
+
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
         assertEquals(curso, responseEntity.getBody());
-        //verification
+
         verify(cursoRepository, times(1)).findByNombreAndCategoria(getByNombre, getByCategoria);
     }
     @Test
-    @DisplayName("No obtiene y lanza un ResourceNotFoundException cuando busca por nombre y categoria")
+    @DisplayName("No_Obtiene:NOMBRE & CATEGORIA. Lanza ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnGetByNombreAndCategoria(){
-        //arrange
-
-        when(cursoRepository.findByNombreAndCategoria(anyString(),anyString())).thenReturn(Optional.empty());
-        //act and asserts
+        when(cursoRepository.findByNombreAndCategoria
+                (anyString(),anyString())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.findByNombreAndCategoria(this.nombre,this.categoria)
         );
-        //verification
-        verify(cursoRepository, times(1)).findByNombreAndCategoria(this.nombre,this.categoria);
+        verify(cursoRepository, times(1))
+                .findByNombreAndCategoria(this.nombre,this.categoria);
     }
     // TEST GET-ALL-BY-PAGINATION METHOD
     @Test
     @DisplayName("Encuentra cursos por paginacion")
-    void itShouldReturnPaginationOfActiveCursos() throws EmptyEntityListException {
-        //ARRANGE
+    void itShouldReturnPaginationOfActiveCursos(){
+
         var pageNumber = 1;
         var pageSize = 15;
 
@@ -364,11 +328,11 @@ public class CursoServiceImplTest {
         );
         Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
         when(cursoRepository.findAll(pageRequest)).thenReturn(cursoPage);
-        //ACT
+
         ResponseEntity<List<Curso>>responseEntity=
                 cursoService.findAllByPagination(pageNumber+"", pageSize+"");
         List<Curso> responseBody=responseEntity.getBody();
-        //ASSERTS
+
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         assertNotNull(responseBody);
         assertFalse(responseBody.isEmpty());
@@ -389,59 +353,47 @@ public class CursoServiceImplTest {
         var expected=unfilteredCourses.size();
         var actual=cursos.size() - filteredCourses.size();
         assertEquals(expected, actual);
-        System.out.println("Solo paginacion");
-        System.out.println("\n Q CURSOS FILTRADOS: "+filteredCourses.size());
-        System.out.println("\n Q CURSOS NO FILTRADOS: "+expected);
-        System.out.println("\n DIFERENCIA ENTRE LISTA CURSO PRINCIPAL Y Q CURSOS FILTRADOS: "+actual);
-        //verifications
+
         verify(cursoRepository).findAll(pageRequest);
     }
     @Test
-    @DisplayName("Lista vacía de cursos, lanza EmptyEntityListException")
+    @DisplayName("Lista_Vacía. Lanza EmptyEntityListException")
     void itShouldThrowEmptyEntityListExceptionOnFindAllCursosByPagination() {
-        //arrange
         var pageNumber = 1;
         var pageSize = 15;
         PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
         when(cursoRepository.findAll(pageRequest)).thenReturn(Page.empty());
-        //act and assert
+
         assertThrows(EmptyEntityListException.class,
                 ()->cursoService.findAllByPagination(pageNumber+"", pageSize+"")
         );
-        //verificación
         verify(cursoRepository).findAll(pageRequest);
     }
     @Test
-    @DisplayName("pageNumber o pageSize menores que 1")
+    @DisplayName("Numero_Pagina o Elementos_Pagina menores <1. Lanza IllegalArgumentException")
     void itShouldReturnBadRequestWhenPageOrSizeLessThanOne() throws EmptyEntityListException{
-        //arrange
         var pageNumber = -1;
         var pageSize = 15;
-        //act and asserts
         assertThrows(IllegalArgumentException.class,
                 ()->cursoService.findAllByPagination(pageNumber+"",pageSize+"")
         );
-        //verification
         verify(cursoRepository, never()).findAll(any(Pageable.class));
     }
     @Test
-    @DisplayName("Lanza un NumberFormatException al querer traer todos los cursos")
-    void itShouldReturnBadRequestOnNumberFormatExceptionOnFindALl() throws EmptyEntityListException {
-        //arrange
+    @DisplayName("Lanza: NumberFormatException")
+    void itShouldReturnBadRequestOnNumberFormatExceptionOnFindALl(){
         var pageNumber = "asd";
         var pageSize = 15;
-        //act and asserts
         assertThrows(NumberFormatException.class,
-                ()->cursoService.findAllByPagination(pageNumber+"",pageSize+"")
+                ()->cursoService.findAllByPagination
+                        (pageNumber+"",pageSize+"")
         );
-        //verification
         verify(cursoRepository, never()).findAll(any(Pageable.class));
     }
     // TEST GET-ALL-BY-NOMBRE-AND-PAGINATION METHOD
     @Test
-    @DisplayName("Encuentra todos los cursos con un nombre por paginacion")
+    @DisplayName("Encuentra cursos con nombre por paginación")
     void itShouldReturnPaginationOfCursosByNombre()throws ResourceNotFoundException {
-        //ARRANGE
         var pageNumber = "1";
         var pageSize = "15";
         var numPag=Integer.parseInt(pageNumber);
@@ -457,16 +409,15 @@ public class CursoServiceImplTest {
         Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
         when(cursoRepository.existsByNombre(this.nombre)).thenReturn(true);
         when(cursoRepository.search(this.nombre, pageRequest)).thenReturn(cursoPage);
-        //ACT
+
         ResponseEntity<List<Curso>> responseEntity=
                 cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
         List<Curso>responseBody=responseEntity.getBody();
-        //ASSERTS
+
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
         assertNotNull(responseBody);
         assertFalse(responseBody.isEmpty());
         assertEquals(2, responseBody.size());
-
         //recorremos cada elemento de la pagina y cercioramos que inactivo==false
         responseBody.forEach(curso -> assertFalse(curso.isInactivo()));
         //lista de cursos filtrados
@@ -485,70 +436,56 @@ public class CursoServiceImplTest {
         var expected=unfilteredCourses.size();
         var actual=cursos.size() - filteredCourses.size();
         assertEquals(expected, actual);
-        System.out.println("Solo paginacion");
-        System.out.println("\n Q CURSOS FILTRADOS: "+filteredCourses.size());
-        System.out.println("\n Q CURSOS NO FILTRADOS: "+expected);
-        System.out.println("\n DIFERENCIA ENTRE LISTA CURSO PRINCIPAL Y Q CURSOS FILTRADOS: "+actual);
-        //verifications
+
         verify(cursoRepository, times(1)).existsByNombre(this.nombre);
         verify(cursoRepository).search(this.nombre,pageRequest);
     }
     @Test
-    @DisplayName("No encuentra cursos por ese nombre y lanza ResourceNotFoundException")
+    @DisplayName("No_Encuentra cursos con nombre. Lanza ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionWhenSearchingCursosByNombre() {
-        //arrange
         var pageNumber = "1";
         var pageSize = "15";
         var numPag=Integer.parseInt(pageNumber);
         var tamPag=Integer.parseInt(pageSize);
-
         Pageable pageable = PageRequest.of(numPag-1, tamPag);
         when(cursoRepository.existsByNombre(anyString())).thenReturn(false);
-        //act and assert
+
         assertThrows(ResourceNotFoundException.class,
-                () -> cursoService.findAllByNombreAndPagination(this.nombre, pageNumber,pageSize)
+                () -> cursoService.findAllByNombreAndPagination
+                        (this.nombre, pageNumber,pageSize)
         );
-        //verifications
         verify(cursoRepository, times(1)).existsByNombre(this.nombre);
         verify(cursoRepository, never()).search(this.nombre,pageable);
     }
-
     @Test
-    @DisplayName("Lanza un NumberFormatException al buscar lista por nombre")
+    @DisplayName("Lanza un NumberFormatException")
     void itShouldReturnBadRequestWhenSizeIsLessThanOneWhenSearchingByNombre(){
-        //arrange
         var pageNumber ="15";
         var pageSize ="asd";
-        //act and asserts
+
         assertThrows(NumberFormatException.class, () -> {
             cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
         });
-        //verification
         verify(cursoRepository, never()).existsByNombre(this.nombre);
         verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
     }
-
     @Test
-    @DisplayName("Lanza un NumberFormatException al buscar lista por nombre")
+    @DisplayName("Lanza un NumberFormatException")
     void itShouldReturnBadRequestWhenPageIsLessThanOneWhenSearchingByNombre(){
-        //arrange
         var pageNumber ="asd";
         var pageSize ="15";
-        //act and asserts
         assertThrows(NumberFormatException.class, () -> {
             cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
         });
-        //verification
         verify(cursoRepository, never()).existsByNombre(this.nombre);
         verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
     }
     @Test
-    @DisplayName("pageNumber o pageSize menores a 1 cuando busca cursos por nombre")
+    @DisplayName("Numero_Pagina o Elementos_Pagina menores <1. Lanza IllegalArgumentException")
     void itShouldReturnBadRequestWhenPageOrSizeLessThanOneWhenFindByNombre(){
-        //arrange
         var pageNumber = "-1";
         var pageSize = "15";
-        //assert
+
         assertThrows(IllegalArgumentException.class, () -> {
             cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
         });

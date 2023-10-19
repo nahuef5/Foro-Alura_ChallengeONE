@@ -32,13 +32,13 @@ public class CursoController{
     }
     @DeleteMapping("/disable")
     public ResponseEntity<Response> disable(@RequestBody @Valid DeleteOrDesableCursoDto dto)
-            throws NotConfirmedException, AccountActivationException, ResourceNotFoundException{
+            throws BusinessRuleException, AccountActivationException, ResourceNotFoundException{
 
         return cursoServiceImpl.disable(dto);
     }
     @DeleteMapping("/delete")
     public ResponseEntity<Response>delete(@RequestBody @Valid DeleteOrDesableCursoDto dto)
-            throws NotConfirmedException, ResourceNotFoundException {
+            throws BusinessRuleException, ResourceNotFoundException {
 
         return cursoServiceImpl.delete(dto);
     }

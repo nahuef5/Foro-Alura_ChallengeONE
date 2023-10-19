@@ -5,7 +5,6 @@ import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
 @RestControllerAdvice
 public class GlobalExceptions{
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -26,21 +25,9 @@ public class GlobalExceptions{
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new Response(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage()));
     }
-    @ExceptionHandler(NotConfirmedException.class)
-    public ResponseEntity<Response> throwNotConfirm(
-            NotConfirmedException e){
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(new Response(HttpStatus.NOT_IMPLEMENTED, e.getMessage()));
-    }
     @ExceptionHandler(AccountActivationException.class)
     public ResponseEntity<Response> throwNotAccountActivation(
             AccountActivationException e){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
-    }
-    @ExceptionHandler(IsNotPositiveException.class)
-    public ResponseEntity<Response> throwInvalidValuesException(
-            IsNotPositiveException e){
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new Response(HttpStatus.BAD_REQUEST, e.getMessage()));
     }
@@ -64,6 +51,11 @@ public class GlobalExceptions{
         var message=ExceptionsTool.trimBrackets(messages);
         return ResponseEntity.badRequest()
                 .body(new Response(HttpStatus.BAD_REQUEST, message));
+    }
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<Response>throwBusinesException(BusinessRuleException e){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new Response(HttpStatus.BAD_REQUEST,e.getMessage()));
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Response> throwException(Exception e){

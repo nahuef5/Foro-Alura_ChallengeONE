@@ -14,7 +14,7 @@ public interface CursoService{
     public ResponseEntity<Response> update(Long id, CUCursoDto dto)
             throws ResourceNotFoundException,EntityAlreadyExistsException;
     public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto)
-            throws ResourceNotFoundException, NotConfirmedException;
+            throws ResourceNotFoundException, BusinessRuleException;
     public ResponseEntity<Response> disable(DeleteOrDesableCursoDto dto)
             throws ResourceNotFoundException, AccountActivationException;
     public ResponseEntity<Response> activate(Long id)

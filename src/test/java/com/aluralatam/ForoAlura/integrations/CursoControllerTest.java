@@ -3,6 +3,7 @@ import com.aluralatam.ForoAlura.domain.curso.models.dtos.*;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.domain.curso.services.CursoServiceImpl;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
+import com.aluralatam.ForoAlura.global.tools.Message;
 import com.aluralatam.ForoAlura.global.tools.Response;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -131,7 +132,7 @@ public class CursoControllerTest{
         List<Curso> cursoList=cursoRepository.findAll();
         //asserts
         assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-        assertEquals(Response.CREATED, response.getRespuesta());
+        assertEquals(Message.CREATED, response.getRespuesta());
         assertThat(cursoList).usingElementComparatorIgnoringFields("id")
                 .contains(nuevoCurso);
     }
@@ -166,7 +167,7 @@ public class CursoControllerTest{
         List<Curso> cursoList=cursoRepository.findAll();
         //asserts
         assertEquals(HttpStatus.OK, response.getHttpStatus());
-        assertEquals(Response.UPDATED, response.getRespuesta());
+        assertEquals(Message.UPDATED, response.getRespuesta());
         assertThat(cursoList).usingElementComparatorIgnoringFields("id")
                 .contains(nuevoCurso);
     }
@@ -222,7 +223,7 @@ public class CursoControllerTest{
         .andExpect(status().isAccepted())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.httpStatus").value("ACCEPTED"))
-                .andExpect(jsonPath("$.respuesta").value("RECURSO ELIMINADO EXITOSAMENTE.")
+                .andExpect(jsonPath("$.respuesta").value("ELIMINADO EXITOSAMENTE.")
                 )
                 .andDo(print())
                 .andReturn()
@@ -234,7 +235,7 @@ public class CursoControllerTest{
         Curso cursoDesactivado = cursoRepository.findById(id).get();
         //asserts
         assertEquals(HttpStatus.ACCEPTED, response.getHttpStatus());
-        assertEquals(Response.ELIMINATED, response.getRespuesta());
+        assertEquals(Message.ELIMINATED, response.getRespuesta());
         assertThat(cursoDesactivado.isInactivo()).isEqualTo(inactivo);
     }
     @Test
@@ -254,7 +255,7 @@ public class CursoControllerTest{
                 .andExpect(status().isAccepted())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.httpStatus").value("ACCEPTED"))
-                .andExpect(jsonPath("$.respuesta").value("RECURSO ELIMINADO EXITOSAMENTE.")
+                .andExpect(jsonPath("$.respuesta").value("ELIMINADO EXITOSAMENTE.")
                 ).andDo(print())
                 .andReturn()
         ;
@@ -264,7 +265,7 @@ public class CursoControllerTest{
         boolean existsCurso=cursoRepository.existsById(id);
         //asserts
         assertEquals(HttpStatus.ACCEPTED, response.getHttpStatus());
-        assertEquals(Response.ELIMINATED, response.getRespuesta());
+        assertEquals(Message.ELIMINATED, response.getRespuesta());
         assertFalse(existsCurso);
     }
 
