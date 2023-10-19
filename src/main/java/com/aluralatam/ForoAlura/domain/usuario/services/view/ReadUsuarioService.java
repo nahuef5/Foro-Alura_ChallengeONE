@@ -1,5 +1,6 @@
 package com.aluralatam.ForoAlura.domain.usuario.services.view;
 import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
+import com.aluralatam.ForoAlura.domain.usuario.model.utils.Countries;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
 import com.aluralatam.ForoAlura.global.tools.*;
@@ -15,8 +16,17 @@ import java.util.*;
 public class ReadUsuarioService{
     private final UsuarioRepository usuarioRepository;
     private final String notFoundByID = Message.NO_ID_EXISTS;
-    private final String notFoundByEmail =Message.NO_PARAMETER_EXIST;
+    private final String badParameter =Message.NO_PARAMETER_EXIST;
     private final String emptyField=Message.EMPTY_FIELD;
+    public boolean isCountry(String pais){
+        try{
+            var replace=pais.toUpperCase().replace(" ","_");
+            Countries.valueOf(replace);
+            return true;
+        }catch(IllegalArgumentException e){
+            return false;
+        }
+    }
     public PageRequest buildPageRequest(String pageNumber, String pageSize, String[] sortingParams) {
         try {
             var pagNum = Integer.parseInt(pageNumber);
@@ -43,7 +53,7 @@ public class ReadUsuarioService{
     public ResponseEntity<Usuario>getUserByEmail(String email)
     {
         Usuario usuario=usuarioRepository.findByEmail(email).orElseThrow(
-                ()->new ResourceNotFoundException(notFoundByEmail)
+                ()->new ResourceNotFoundException(badParameter)
         );
         return ResponseEntity.ok().body(usuario);
     }
@@ -131,6 +141,8 @@ public class ReadUsuarioService{
     {
         if(pais.equals(""))
             throw new BusinessRuleException(emptyField);
+        if(!isCountry(pais))
+            throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
 
         Page<Usuario>listaUsuarios=usuarioRepository.findAllByCountry(pais,pageRequest);
@@ -150,6 +162,8 @@ public class ReadUsuarioService{
     {
         if(pais.equals(""))
             throw new BusinessRuleException(emptyField);
+        if(!isCountry(pais))
+            throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllActiveUsersByCountry(pais,pageRequest);
 
@@ -168,6 +182,8 @@ public class ReadUsuarioService{
     {
         if(pais.equals(""))
             throw new BusinessRuleException(emptyField);
+        if(!isCountry(pais))
+            throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllInactiveUsersByCountry(pais,pageRequest);
 

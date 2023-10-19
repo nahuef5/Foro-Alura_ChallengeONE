@@ -41,7 +41,13 @@ public class ReadUsuarioServiceTest {
         usuarios.clear();
     }
     @Test
-    void testGetAllUsersByNameOrSurname_NumeroNegativo() {
+    void itShouldThrowAnIllegalArgumentExceptionForCountryFieldValue() {
+        var pais = "asdasd";
+        var isCountry=readUsuarioService.isCountry(pais);
+        assertFalse(isCountry);
+    }
+    @Test
+    void itShouldThrowAnIllegalArgumentExceptionForNegativeValue() {
         var pageNumber = "1";
         var pageSize = "-10";
         String[] sortingParams ={"dato.nombre","asc"};
@@ -52,7 +58,7 @@ public class ReadUsuarioServiceTest {
         );
     }
     @Test
-    void testGetAllUsersByNameOrSurname_String() {
+    void itShouldThrowAnIllegalArgumentExceptionForNonnumericValue() {
         var pageNumber = "dewed1";
         var pageSize = "10";
         String[] sortingParams ={"dato.nombre","asc"};
@@ -406,9 +412,30 @@ public class ReadUsuarioServiceTest {
         verify(usuarioRepository,never()).findAllByCountry(pais,pageRequest);
     }
     @Test
+    @DisplayName("(ALL)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForUsersFoundByCountry(){
+        var pais = "xascasfe";
+        var pageNumber ="1";
+        var pageSize ="10";
+        String[] sortingParams ={"dato.pais","asc"};
+        PageRequest pageRequest =readUsuarioService.buildPageRequest(
+                pageNumber,
+                pageSize,
+                sortingParams);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            readUsuarioService.getAllUsersByCountry(
+                    pais,
+                    pageNumber,
+                    pageSize,
+                    sortingParams);
+        });
+        verify(usuarioRepository,never()).findAllByCountry(pais,pageRequest);
+    }
+    @Test
     @DisplayName("(ALL)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
     void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFoundByCountry() {
-        var pais ="inexistente";
+        var pais ="Bolivia";
         var pageNumber = "1";
         var pageSize = "10";
         String[] sortingParams ={"dato.pais","asc"};
@@ -474,9 +501,30 @@ public class ReadUsuarioServiceTest {
         verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,pageRequest);
     }
     @Test
+    @DisplayName("(Activo)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForActiveUsersFoundByCountry(){
+        var pais = "xascasfe";
+        var pageNumber ="1";
+        var pageSize ="10";
+        String[] sortingParams ={"dato.pais","asc"};
+        PageRequest pageRequest =readUsuarioService.buildPageRequest(
+                pageNumber,
+                pageSize,
+                sortingParams);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            readUsuarioService.getAllActiveUsersByCountry(
+                    pais,
+                    pageNumber,
+                    pageSize,
+                    sortingParams);
+        });
+        verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,pageRequest);
+    }
+    @Test
     @DisplayName("(Activo)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
     void itShouldThrowAResourceNotFoundExceptionWhenNoActiveUsersFoundByCountry() {
-        var pais ="inexistente";
+        var pais ="Bolivia";
         var pageNumber = "1";
         var pageSize = "10";
         String[] sortingParams ={"dato.pais","asc"};
@@ -542,9 +590,30 @@ public class ReadUsuarioServiceTest {
         verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,pageRequest);
     }
     @Test
+    @DisplayName("(Inactivo)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForInactiveUsersFoundByCountry(){
+        var pais = "xascasfe";
+        var pageNumber ="1";
+        var pageSize ="10";
+        String[] sortingParams ={"dato.pais","asc"};
+        PageRequest pageRequest =readUsuarioService.buildPageRequest(
+                pageNumber,
+                pageSize,
+                sortingParams);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            readUsuarioService.getAllInactiveUsersByCountry(
+                    pais,
+                    pageNumber,
+                    pageSize,
+                    sortingParams);
+        });
+        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,pageRequest);
+    }
+    @Test
     @DisplayName("(Inactivo)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
     void itShouldThrowAResourceNotFoundExceptionWhenNoInactiveUsersFoundByCountry() {
-        var pais ="inexistente";
+        var pais ="Bolivia";
         var pageNumber = "1";
         var pageSize = "10";
         String[] sortingParams ={"dato.pais","asc"};

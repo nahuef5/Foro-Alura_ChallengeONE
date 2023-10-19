@@ -54,8 +54,7 @@ public class CursoControllerTest{
         var categoria= categoryGenerator();
         CUCursoDto dto=new CUCursoDto(nombre, categoria);
         Curso curso=new Curso(dto);
-        cursoRepository.save(curso);
-        return curso;
+        return cursoRepository.save(curso);
     }
     @Test
     @DisplayName("Deberia poder retornar una lista de cursos buscado por nombre con paginacion")
