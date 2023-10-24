@@ -41,7 +41,7 @@ public class CursoServiceImplTest {
     // TEST SAVE METHOD
     @Test
     @DisplayName("Guarda & Retorna: ResponseEntity_Created")
-    void itShouldReturnResponseEntity_StatusCreatedOnSave(){
+    void itShouldReturnResponseEntity_StatusCreatedOnSave() throws EntityAlreadyExistsException {
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsByNombreAndCategoria(
                 anyString(), anyString())).thenReturn(false);
@@ -77,7 +77,7 @@ public class CursoServiceImplTest {
     // TEST UPDATE METHOD
     @Test
     @DisplayName("Actualiza & Retorna: ResponseEntity_OK")
-    void itShouldReturnResponseEntity_StatusOkOnUpdate(){
+    void itShouldReturnResponseEntity_StatusOkOnUpdate() throws EntityAlreadyExistsException, ResourceNotFoundException {
 
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
@@ -128,7 +128,7 @@ public class CursoServiceImplTest {
 
     @Test
     @DisplayName("Activa & Retorna: ResponseEntity_Accepted")
-    void itShouldResponseEntity_StatusAcceptedOnActivate(){
+    void itShouldResponseEntity_StatusAcceptedOnActivate() throws AccountActivationException, ResourceNotFoundException {
         curso.setInactivo(true);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         when(cursoRepository.save(any(Curso.class))).thenReturn(curso);
@@ -165,7 +165,7 @@ public class CursoServiceImplTest {
     // TEST DELETE METHOD
     @Test
     @DisplayName("Elimina & Retorna: ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB(){
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB() throws BusinessRuleException, ResourceNotFoundException {
         boolean confirm=true;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
@@ -208,7 +208,7 @@ public class CursoServiceImplTest {
     // TEST DISABLE METHOD
     @Test
     @DisplayName("Desactiva & Retorna: ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDisable(){
+    void itShouldReturnResponseEntity_StatusAcceptedOnDisable() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         boolean inactivo=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,inactivo);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
@@ -265,7 +265,7 @@ public class CursoServiceImplTest {
     // TEST GET-BY-ID METHOD
     @Test
     @DisplayName("Obtiene:ID & Retorna: ResponseEntity_FOUND")
-    void itShouldReturnResponseEntity_StatusFoundOnGetById(){
+    void itShouldReturnResponseEntity_StatusFoundOnGetById() throws ResourceNotFoundException {
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         ResponseEntity<Curso>responseEntity=cursoService.findById(id);
 
@@ -314,11 +314,9 @@ public class CursoServiceImplTest {
     // TEST GET-ALL-BY-PAGINATION METHOD
     @Test
     @DisplayName("Encuentra cursos por paginacion")
-    void itShouldReturnPaginationOfActiveCursos(){
-
+    void itShouldReturnPaginationOfActiveCursos() throws EmptyEntityListException {
         var pageNumber = 1;
         var pageSize = 15;
-
         PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
         List<Curso> cursos = Arrays.asList(
                 curso,
@@ -347,7 +345,7 @@ public class CursoServiceImplTest {
         //creamos una lista de cursos no filtrados con inactivo==true
         List<Curso> unfilteredCourses = cursos.stream()
                 .filter(
-                        curso->curso.isInactivo()==true
+                        curso-> curso.isInactivo()
                 )
                 .toList();
         var expected=unfilteredCourses.size();
@@ -371,7 +369,7 @@ public class CursoServiceImplTest {
     }
     @Test
     @DisplayName("Numero_Pagina o Elementos_Pagina menores <1. Lanza IllegalArgumentException")
-    void itShouldReturnBadRequestWhenPageOrSizeLessThanOne() throws EmptyEntityListException{
+    void itShouldReturnBadRequestWhenPageOrSizeLessThanOne(){
         var pageNumber = -1;
         var pageSize = 15;
         assertThrows(IllegalArgumentException.class,
@@ -386,7 +384,7 @@ public class CursoServiceImplTest {
         var pageSize = 15;
         assertThrows(NumberFormatException.class,
                 ()->cursoService.findAllByPagination
-                        (pageNumber+"",pageSize+"")
+                        (pageNumber, String.valueOf(pageSize))
         );
         verify(cursoRepository, never()).findAll(any(Pageable.class));
     }
@@ -428,7 +426,7 @@ public class CursoServiceImplTest {
         List<Curso> unfilteredCourses = cursos.stream()
                 .filter(
                         curso->
-                                curso.isInactivo()==true
+                                curso.isInactivo()
                                         ||
                                 !curso.getNombre().equals(nombre)
                 )

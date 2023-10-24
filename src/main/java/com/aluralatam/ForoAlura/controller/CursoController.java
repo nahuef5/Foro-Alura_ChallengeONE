@@ -15,7 +15,7 @@ import java.util.List;
 public class CursoController{
     private final CursoServiceImpl cursoServiceImpl;
     @PostMapping("/create")
-    public ResponseEntity<Response> save(@RequestBody @Valid CUCursoDto dto){
+    public ResponseEntity<Response> save(@RequestBody @Valid CUCursoDto dto) throws EntityAlreadyExistsException {
         return cursoServiceImpl.save(dto);
     }
     @PutMapping("/update/{id}")
@@ -33,20 +33,18 @@ public class CursoController{
     @DeleteMapping("/disable")
     public ResponseEntity<Response> disable(@RequestBody @Valid DeleteOrDesableCursoDto dto)
             throws BusinessRuleException, AccountActivationException, ResourceNotFoundException{
-
         return cursoServiceImpl.disable(dto);
     }
     @DeleteMapping("/delete")
     public ResponseEntity<Response>delete(@RequestBody @Valid DeleteOrDesableCursoDto dto)
-            throws BusinessRuleException, ResourceNotFoundException {
-
+            throws BusinessRuleException, ResourceNotFoundException{
         return cursoServiceImpl.delete(dto);
     }
     @GetMapping("/all")
     public ResponseEntity<List<Curso>> getAll(
             @RequestParam(value = "pageNumber", defaultValue = "0", required = true) String pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "15", required = true) String pageSize
-    ){
+    ) throws EmptyEntityListException {
         return cursoServiceImpl.findAllByPagination(pageNumber, pageSize);
     }
     @GetMapping("/search")
@@ -55,7 +53,7 @@ public class CursoController{
             @RequestParam(value = "pageNumber", defaultValue = "0", required = true) String pageNumber,
             @RequestParam(value = "pageSize", defaultValue = "15", required = true) String pageSize
     )
-            throws EmptyEntityListException, ResourceNotFoundException{
+            throws ResourceNotFoundException{
         var nombre=dto.nombre();
         return cursoServiceImpl.findAllByNombreAndPagination(nombre,pageNumber,pageSize);
     }
@@ -68,7 +66,7 @@ public class CursoController{
     }
     @GetMapping("/byNombreAndCategoria")
     public ResponseEntity<Curso>getByNombreAndCategoria(
-            @RequestBody @Valid CUCursoDto dto)throws ResourceNotFoundException{
+            @RequestBody @Valid CUCursoDto dto) throws ResourceNotFoundException {
         var nombre=dto.nombre();
         var categoria=dto.categoria();
         return cursoServiceImpl.findByNombreAndCategoria(nombre, categoria);

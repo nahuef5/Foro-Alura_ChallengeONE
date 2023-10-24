@@ -79,7 +79,7 @@ public class ModifyUsuarioServiceTest {
     }
     @Test
     @DisplayName("Actualiza Info Personal. Retorna ResponseEntity_OK")
-    void itShouldReturnResponseEntity_StatusOkOnUpdate(){
+    void itShouldReturnResponseEntity_StatusOkOnUpdate() throws ResourceNotFoundException {
         UpdateDatoPersonalDTO dto=new UpdateDatoPersonalDTO(
                 "Rubby Verde",
                 "Gata Peque",
@@ -114,7 +114,7 @@ public class ModifyUsuarioServiceTest {
     }
     @Test
     @DisplayName("Actualiza_Password. Retorna ResponseEntity_OK")
-    void itShouldReturnResponseEntity_StatusOkOnGenerateANewPassword(){
+    void itShouldReturnResponseEntity_StatusOkOnGenerateANewPassword() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         var email="rubbygata@email.com";
         NuevaContrasena dto=new NuevaContrasena(
                 email,
@@ -182,7 +182,7 @@ public class ModifyUsuarioServiceTest {
     }
     @Test
     @DisplayName("Desactiva & Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDisable(){
+    void itShouldReturnResponseEntity_StatusAcceptedOnDisable() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
         doNothing().when(usuarioRepository).setInactiveToUser(id);
@@ -235,7 +235,7 @@ public class ModifyUsuarioServiceTest {
     }
     @Test
     @DisplayName("Desactiva_Lista. Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB(){
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         List<Long>ids=Arrays.asList(id,id2);
         List<Usuario>users=Arrays.asList(usuario,user);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
@@ -297,7 +297,7 @@ public class ModifyUsuarioServiceTest {
     }
     @Test
     @DisplayName("Reactiva & Retorna ResponseEntity_Accepted")
-    void itShouldResponseEntity_StatusAcceptedOnReactivate(){
+    void itShouldResponseEntity_StatusAcceptedOnReactivate() throws ResourceNotFoundException, AccountActivationException {
         var email="rubbygata@email.com";
         usuario.setActivo(false);
         when(usuarioRepository.findByEmail(email)).thenReturn(Optional.of(usuario));

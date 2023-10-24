@@ -4,11 +4,14 @@ import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
 import com.aluralatam.ForoAlura.global.tools.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 @RequiredArgsConstructor
@@ -21,7 +24,6 @@ public class DeleteUsuarioService{
             .build();
     private final String notFoundByID =Message.NO_ID_EXISTS;
     private final String notConfirmed=Message.NOT_CONFIRMED;
-    private final String errorList=Message.RESOURCES_DO_NOT_EXIST;
     private final String alreadyActivated =Message.RESOURCE_ALREADY_ACTIVED;
     /**
      * Verifica si todos los ids de usuarios proporcionados existen en ddbb.
@@ -33,9 +35,8 @@ public class DeleteUsuarioService{
         final List<Long>existingIds=usuarioRepository.findAllById(ids)
                 .stream()
                 .map(Usuario::getId)
-                .collect(Collectors.toList())
-                ;
-        return existingIds.containsAll(ids);
+                .toList();
+        return new HashSet<>(existingIds).containsAll(ids);
     }
     /**
      * Obtiene una lista de ids que no existen en la base de datos
@@ -46,7 +47,7 @@ public class DeleteUsuarioService{
     private List<Long> getNonexistentIds(List<Long>ids){
         final List<Long>existingIds=usuarioRepository.findAllById(ids)
                 .stream().map(Usuario::getId)
-                .collect(Collectors.toList())
+                .toList()
                 ;
         return ids
                 .stream()
@@ -60,13 +61,12 @@ public class DeleteUsuarioService{
      * @param ids lista de los supuestos ids de usuarios.
      * @return string que contiene los ids de usuarios inexistentes.
      */
-    public String printNonExistingIds(List<Long>ids){
+    private String printNonExistingIds(List<Long>ids){
         final List<Long>idsAsString=getNonexistentIds(ids);
         return idsAsString
                 .stream()
                 .map(Object::toString)
-                .collect(Collectors.joining(",","",""))
-                ;
+                .collect(Collectors.joining(",","",""));
     }
     /**
      * Verifica si todos los usuarios con los ids proporcionados están inactivos.
@@ -99,7 +99,7 @@ public class DeleteUsuarioService{
      * @param ids lista de los ids de usuarios
      * @return string que contiene los ids de usuarios activos con mensajes
      */
-    public String printAllActives(List<Long>ids){
+    private String printAllActives(List<Long>ids){
         final List<Usuario>usuariosInactivos=getAllActives(ids);
         return usuariosInactivos
                 .stream()
@@ -120,8 +120,7 @@ public class DeleteUsuarioService{
             AccountActivationException.class,
             BusinessRuleException.class
     })
-    public ResponseEntity<Response> deleteUserFromDDBB(RemoveUsuarioDto dto)
-    {
+    public ResponseEntity<Response> deleteUserFromDDBB(@Valid RemoveUsuarioDto dto) throws AccountActivationException, BusinessRuleException, ResourceNotFoundException {
         final Long id=dto.id();
         Usuario usuario=usuarioRepository.findById(id).orElseThrow(
                 ()->new ResourceNotFoundException(notFoundByID)
@@ -148,9 +147,9 @@ public class DeleteUsuarioService{
             AccountActivationException.class,
             BusinessRuleException.class
     })
-    public ResponseEntity<Response>deleteUsersFromDDBB(RemoveListaUsuariosDto dto)
-    {
+    public ResponseEntity<Response>deleteUsersFromDDBB(@Valid RemoveListaUsuariosDto dto) throws AccountActivationException, BusinessRuleException, ResourceNotFoundException {
         final List<Long> ids=dto.ids();
+        String errorList = Message.RESOURCES_DO_NOT_EXIST;
         if(!existsAllUsers(ids))
             throw new ResourceNotFoundException(errorList +printNonExistingIds(ids));
         if(!dto.remove())

@@ -30,7 +30,7 @@ public class CursoServiceImpl implements CursoService {
     }
     @Transactional(rollbackFor = EntityAlreadyExistsException.class)
     @Override
-    public ResponseEntity<Response> update(Long id, CUCursoDto dto) throws ResourceNotFoundException, EntityAlreadyExistsException {
+    public ResponseEntity<Response> update(Long id, CUCursoDto dto) throws EntityAlreadyExistsException, ResourceNotFoundException {
         var nombre = dto.nombre();
         var categoria = dto.categoria();
         if (!cursoRepository.existsById(id))
@@ -46,7 +46,7 @@ public class CursoServiceImpl implements CursoService {
     }
     @Transactional(rollbackFor = BusinessRuleException.class)
     @Override
-    public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto) throws ResourceNotFoundException, BusinessRuleException {
+    public ResponseEntity<Response> delete(DeleteOrDesableCursoDto dto) throws BusinessRuleException, ResourceNotFoundException {
         var id = dto.id();
         var confirm = dto.inactivo();
         if (!cursoRepository.existsById(id))
@@ -75,7 +75,7 @@ public class CursoServiceImpl implements CursoService {
     }
     @Transactional(rollbackFor = AccountActivationException.class)
     @Override
-    public ResponseEntity<Response> activate(Long id) throws ResourceNotFoundException, AccountActivationException {
+    public ResponseEntity<Response> activate(Long id) throws AccountActivationException, ResourceNotFoundException {
         Curso curso = cursoRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException(Message.NO_ID_EXISTS)
         );
@@ -129,7 +129,7 @@ public class CursoServiceImpl implements CursoService {
     public ResponseEntity<List<Curso>> findAllByPagination(
             String pageNumber,
             String pageSize
-    ){
+    ) throws EmptyEntityListException {
         var numPag=Integer.parseInt(pageNumber);
         var tamPag=Integer.parseInt(pageSize);
         if (numPag < 1 || tamPag < 1) {

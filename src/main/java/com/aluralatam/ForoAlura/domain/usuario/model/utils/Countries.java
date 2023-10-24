@@ -17,5 +17,5 @@ public enum Countries {
     PERU,
     REPUBLICA_DOMINICANA,
     URUGUAY,
-    VENEZUELA,
+    VENEZUELA
 }

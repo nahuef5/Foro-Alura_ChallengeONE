@@ -3,8 +3,7 @@ import com.aluralatam.ForoAlura.domain.curso.models.dtos.*;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.domain.curso.services.CursoServiceImpl;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
-import com.aluralatam.ForoAlura.global.tools.Message;
-import com.aluralatam.ForoAlura.global.tools.Response;
+import com.aluralatam.ForoAlura.global.tools.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
@@ -36,8 +35,6 @@ public class CursoControllerTest{
     //URL base para las solicitudes
     private final String BASE_URL = "/api/v1/curso";
     @Autowired
-    private CursoServiceImpl cursoServiceImpl;
-    @Autowired
     private CursoRepository cursoRepository;
     //valores predeterminados para paginacion
     private final String PAGE_NUMBER ="1";
@@ -57,7 +54,7 @@ public class CursoControllerTest{
         return cursoRepository.save(curso);
     }
     @Test
-    @DisplayName("Deberia poder retornar una lista de cursos buscado por nombre con paginacion")
+    @DisplayName("Retorna Lista por nombre con paginacion")
     public void itShouldBeAbleToReturnListOfCursosByNombreWithPagination()throws Exception{
         //guarda un curso en la ddbb
         Curso curso=seedCursoInDDBB();
@@ -85,7 +82,7 @@ public class CursoControllerTest{
         actualCursos.forEach(course -> assertEquals(nombre,course.getNombre()));
     }
     @Test
-    @DisplayName("Deberia poder obtener una lista de cursos y retornar un ResponseEntity")
+    @DisplayName("Obtiene lista de cursos")
     public void itShouldBeAbleReturnListOfCursosByPagination()throws Exception{
         //get all al endpoint
         MvcResult result=mockMvc.perform(get(BASE_URL+"/all")
@@ -105,7 +102,7 @@ public class CursoControllerTest{
         actualCursos.forEach(curso -> assertFalse(curso.isInactivo()));
     }
     @Test
-    @DisplayName("Deberia poder registrar un curso en la ddbb y retornar un ResponseEntity")
+    @DisplayName("Registra curso y retornar ResponseEntity")
     public void itShouldBeAbleToRegisterCursoAndReturnAResponseEntity()throws Exception {
         //crea dto
         var nombre = nameGenerator();
@@ -136,7 +133,7 @@ public class CursoControllerTest{
                 .contains(nuevoCurso);
     }
     @Test
-    @DisplayName("Deberia poder actualizar un curso y retornar un ResponseEntity")
+    @DisplayName("Actualiza curso y retorna ResponseEntity")
     public void itShouldBeAbleToUpdateCursoAndReturnAResponseEntity()throws Exception{
         //siembra curso
         Curso curso= seedCursoInDDBB();
@@ -171,7 +168,7 @@ public class CursoControllerTest{
                 .contains(nuevoCurso);
     }
     @Test
-    @DisplayName("Deberia poder activar un curso desactivado y retornar un ResponseEntity")
+    @DisplayName("Activa curso y retornar ResponseEntity")
     public void itShouldBeAbleToActivateCursoAndReturnAResponseEntity()throws Exception{
         //siembra curso
         Curso curso= seedCursoInDDBB();
@@ -205,7 +202,7 @@ public class CursoControllerTest{
             .doesNotContain(cursoDesactivado);
     }
     @Test
-    @DisplayName("Deberia poder desactivar un curso y retornar un ResponseEntity")
+    @DisplayName("Desactiva curso y retorna ResponseEntity")
     public void itShouldBeAbleToDisableCursoAndReturnAResponseEntity()throws Exception{
         //siembra curso
         Curso curso= seedCursoInDDBB();
@@ -238,7 +235,7 @@ public class CursoControllerTest{
         assertThat(cursoDesactivado.isInactivo()).isEqualTo(inactivo);
     }
     @Test
-    @DisplayName("Deberia poder eliminar  un curso de la ddbb y retornar un ResponseEntity")
+    @DisplayName("Elimina curso retorna ResponseEntity")
     public void itShouldBeAbleToDeleteCursoAndReturnAResponseEntity()throws Exception{
         //siembra curso
         Curso curso= seedCursoInDDBB();
@@ -269,7 +266,7 @@ public class CursoControllerTest{
     }
 
     @Test
-    @DisplayName("Deberia poder obtener por id un curso  y retornar un ResponseEntity")
+    @DisplayName("Obtiene curso por id y retorna ResponseEntity")
     public void itShouldBeAbleReturnAResponseEntityAndGetACursoById()throws Exception{
         //siembra un curso
         Curso curso= seedCursoInDDBB();
@@ -295,7 +292,7 @@ public class CursoControllerTest{
         assertEquals(curso.hashCode(),response.hashCode());
     }
     @Test
-    @DisplayName("Deberia poder obtener por nombre, categoria y retornar un ResponseEntity")
+    @DisplayName("Obtiene por nombre-categoria y retorna ResponseEntity")
     public void itShouldBeAbleReturnAResponseEntityAndGetACursoByNombreAndCategoria()throws Exception{
         //siembra el curso
         Curso curso= seedCursoInDDBB();

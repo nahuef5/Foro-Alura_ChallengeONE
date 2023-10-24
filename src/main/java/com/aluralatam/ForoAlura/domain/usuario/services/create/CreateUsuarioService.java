@@ -1,6 +1,7 @@
 package com.aluralatam.ForoAlura.domain.usuario.services.create;
 import com.aluralatam.ForoAlura.domain.usuario.model.dto.CreateUsuarioDTO;
 import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
+import com.aluralatam.ForoAlura.domain.usuario.model.utils.Countries;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
 import com.aluralatam.ForoAlura.global.tools.*;
@@ -23,8 +24,15 @@ public class CreateUsuarioService{
     private boolean userAlreadyExists(String email){
         return usuarioRepository.existsByEmail(email);
     }
-    private boolean differentPassword(String password, String password2){
-        return !password.equals(password2);
+    private boolean differentPassword(String password, String password2){return !password.equals(password2);}
+    public boolean isCountry(String pais){
+        try{
+            var replace=pais.toUpperCase().replace(" ","_");
+            Countries.valueOf(replace);
+            return true;
+        }catch(IllegalArgumentException e){
+            return false;
+        }
     }
     private void saveUser(CreateUsuarioDTO dto){
         Usuario usuario=new Usuario(dto);
@@ -35,14 +43,15 @@ public class CreateUsuarioService{
             EntityAlreadyExistsException.class,
             BusinessRuleException.class
     })
-    public ResponseEntity<Response> registerNewCommonUser(@Valid CreateUsuarioDTO dto)
-            throws EntityAlreadyExistsException,BusinessRuleException
-    {
+    public ResponseEntity<Response> registerNewCommonUser(@Valid CreateUsuarioDTO dto) throws EntityAlreadyExistsException, BusinessRuleException {
         final String email=dto.email();
         final String clave1=dto.contrasena();
         final String clave2=dto.confirmarContrasena();
+        final String pais=dto.datosPersonalesDto().pais();
         if(differentPassword(clave1,clave2))
             throw new BusinessRuleException(errorPassword);
+        if(!isCountry(pais))
+            throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
         if(userAlreadyExists(email))
             throw new EntityAlreadyExistsException(errorMessage);
         saveUser(dto);

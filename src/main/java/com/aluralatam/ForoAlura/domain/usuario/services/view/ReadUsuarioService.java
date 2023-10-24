@@ -42,16 +42,14 @@ public class ReadUsuarioService{
         }
     }
     @Transactional(readOnly=true)
-    public ResponseEntity<Usuario> getUserById(Long id)
-    {
+    public ResponseEntity<Usuario> getUserById(Long id) throws ResourceNotFoundException {
         Usuario usuario=usuarioRepository.findById(id).orElseThrow(
                 ()->new ResourceNotFoundException(notFoundByID)
         );
         return ResponseEntity.ok().body(usuario);
     }
     @Transactional(readOnly=true)
-    public ResponseEntity<Usuario>getUserByEmail(String email)
-    {
+    public ResponseEntity<Usuario>getUserByEmail(String email) throws ResourceNotFoundException {
         Usuario usuario=usuarioRepository.findByEmail(email).orElseThrow(
                 ()->new ResourceNotFoundException(badParameter)
         );
@@ -64,9 +62,8 @@ public class ReadUsuarioService{
             String pageNumber,
             String pageSize,
             String[] sortingParams
-    )
-    {
-        if(nombreOApellido.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(nombreOApellido.isEmpty())
             throw new BusinessRuleException(emptyField);
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllUsersByNameOrSurname(nombreOApellido,pageRequest);
@@ -83,9 +80,8 @@ public class ReadUsuarioService{
             String pageNumber,
             String pageSize,
             String[] sortingParams
-    )
-    {
-        if(nombreOApellido.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(nombreOApellido.isEmpty())
             throw new BusinessRuleException(emptyField);
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository
@@ -103,9 +99,8 @@ public class ReadUsuarioService{
             String pageNumber,
             String pageSize,
             String[] sortingParams
-    )
-    {
-        if(nombreOApellido.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(nombreOApellido.isEmpty())
             throw new BusinessRuleException(emptyField);
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository
@@ -121,8 +116,7 @@ public class ReadUsuarioService{
                         String pageNumber,
                         String pageSize,
                         String[] sortingParams
-    )
-    {
+    ) throws EmptyEntityListException {
         PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
         Page<Usuario>listaUsuarios=usuarioRepository.searchByActivo(activo,pageRequest);
 
@@ -137,9 +131,8 @@ public class ReadUsuarioService{
                          String pageNumber,
                          String pageSize,
                          String[] sortingParams
-    )
-    {
-        if(pais.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(pais.isEmpty())
             throw new BusinessRuleException(emptyField);
         if(!isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
@@ -158,9 +151,8 @@ public class ReadUsuarioService{
                                String pageNumber,
                                String pageSize,
                                String[] sortingParams
-    )
-    {
-        if(pais.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(pais.isEmpty())
             throw new BusinessRuleException(emptyField);
         if(!isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
@@ -178,9 +170,8 @@ public class ReadUsuarioService{
                                  String pageNumber,
                                  String pageSize,
                                  String[] sortingParams
-    )
-    {
-        if(pais.equals(""))
+    ) throws ResourceNotFoundException, BusinessRuleException {
+        if(pais.isEmpty())
             throw new BusinessRuleException(emptyField);
         if(!isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
@@ -192,7 +183,7 @@ public class ReadUsuarioService{
             throw new ResourceNotFoundException(Message.EMPTY_LIST);
         return ResponseEntity.status(HttpStatus.OK).body(usuarios);
     }
-    @Transactional(readOnly=true)
+    /*@Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>> getAllUsersToCommonUsers(
                 String pageNumber,
                 String pageSize,
@@ -205,5 +196,5 @@ public class ReadUsuarioService{
         if(usuarios.isEmpty())
             throw new ResourceNotFoundException(Message.EMPTY_LIST);
         return ResponseEntity.status(HttpStatus.OK).body(usuarios);
-    }
+    }*/
 }

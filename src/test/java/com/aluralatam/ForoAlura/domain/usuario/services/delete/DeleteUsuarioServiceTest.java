@@ -81,7 +81,7 @@ public class DeleteUsuarioServiceTest {
 
     @Test
     @DisplayName("Elimina & Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB()throws ResourceNotFoundException{
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB() throws ResourceNotFoundException, BusinessRuleException, AccountActivationException {
         usuario.setActivo(false);
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
@@ -133,7 +133,7 @@ public class DeleteUsuarioServiceTest {
 
     @Test
     @DisplayName("Elimina_Lista. Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB(){
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB() throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
         List<Long>ids=Arrays.asList(id4,id5);
         List<Usuario>users=Arrays.asList(us,u);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);

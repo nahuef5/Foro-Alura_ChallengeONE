@@ -11,6 +11,8 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 @RequiredArgsConstructor
@@ -35,7 +37,7 @@ public class ModifyUsuarioService{
     private final String notFoundByEmail =Message.NO_PARAMETER_EXIST;
     private final String alreadyInactivated =Message.RESOURCE_ALREADY_INACTIVED;
     private final String errorPassword=Message.PASSWORDS_DO_NOT_MATCH;
-    private final String errorList=Message.RESOURCES_DO_NOT_EXIST;
+
     /**
      * Compara dos claves para verificar si son diferentes.
      *
@@ -98,9 +100,8 @@ public class ModifyUsuarioService{
     private boolean existsAllUsers(List<Long>ids){
         final List<Long>existingIds=usuarioRepository.findAllById(ids)
                 .stream().map(Usuario::getId)
-                .collect(Collectors.toList())
-        ;
-        return existingIds.containsAll(ids);
+                .toList();
+        return new HashSet<>(existingIds).containsAll(ids);
     }
     /**
      * Obtiene una lista de ids que no existen en la base de datos
@@ -111,7 +112,7 @@ public class ModifyUsuarioService{
     private List<Long> getNonexistentIds(List<Long>ids){
         final List<Long>existingIds=usuarioRepository.findAllById(ids)
                 .stream().map(Usuario::getId)
-                .collect(Collectors.toList())
+                .toList()
         ;
         return ids
                 .stream()
@@ -125,7 +126,7 @@ public class ModifyUsuarioService{
      * @param ids lista de los supuestos ids de usuarios.
      * @return string que contiene los ids de usuarios inexistentes.
      */
-    public String printNonExistingIds(List<Long>ids){
+    private String printNonExistingIds(List<Long>ids){
         final List<Long>idsAsString=getNonexistentIds(ids);
         return idsAsString
                 .stream()
@@ -144,8 +145,7 @@ public class ModifyUsuarioService{
     @Validated
     @Transactional
     public ResponseEntity<Response> updateUserByPersonalInformation
-            (Long id, @Valid UpdateDatoPersonalDTO dto)
-    {
+            (Long id, @Valid UpdateDatoPersonalDTO dto) throws ResourceNotFoundException {
         Usuario usuario=usuarioRepository.findById(id).orElseThrow(
                 ()->new ResourceNotFoundException(notFoundByID));
 
@@ -173,8 +173,7 @@ public class ModifyUsuarioService{
             BusinessRuleException.class,
             AccountActivationException.class
     })
-    public ResponseEntity<Response>generateANewPassword(@Valid NuevaContrasena dto)
-    {
+    public ResponseEntity<Response>generateANewPassword(@Valid NuevaContrasena dto) throws ResourceNotFoundException, AccountActivationException, BusinessRuleException {
         final String email= dto.email();
         final String password1=dto.contrasena();
         final String password2=dto.confirmarContrasena();
@@ -199,8 +198,7 @@ public class ModifyUsuarioService{
      */
     @Validated
     @Transactional(rollbackFor=BusinessRuleException.class)
-    public ResponseEntity<Response>disableAccount(@Valid RemoveUsuarioDto dto)
-    {
+    public ResponseEntity<Response>disableAccount(@Valid RemoveUsuarioDto dto) throws ResourceNotFoundException, BusinessRuleException, AccountActivationException {
         final Long id=dto.id();
         final boolean remove= dto.remove();
         Usuario usuario=usuarioRepository.findById(id)
@@ -227,11 +225,12 @@ public class ModifyUsuarioService{
             BusinessRuleException.class,
             AccountActivationException.class
     })
-    public ResponseEntity<Response>disableAccounts(@Valid RemoveListaUsuariosDto dto){
+    public ResponseEntity<Response>disableAccounts(@Valid RemoveListaUsuariosDto dto) throws ResourceNotFoundException, BusinessRuleException, AccountActivationException {
         final List<Long> ids=dto.ids();
         if(!existsAllUsers(ids)) {
+            String errorList = Message.RESOURCES_DO_NOT_EXIST;
             throw new ResourceNotFoundException(
-                    errorList+
+                    errorList +
                     printNonExistingIds(ids)
             );
         }
@@ -252,8 +251,7 @@ public class ModifyUsuarioService{
      * @throws AccountActivationException si la cuenta ya está activada.
      */
     @Transactional
-    public ResponseEntity<Response>reactivateAccountByEmail(String email)
-    {
+    public ResponseEntity<Response>reactivateAccountByEmail(String email) throws ResourceNotFoundException, AccountActivationException {
         Usuario usuario=usuarioRepository.findByEmail(email).orElseThrow(
                 ()->new ResourceNotFoundException(notFoundByEmail)
         );

@@ -21,7 +21,7 @@ public class CreateUsuarioServiceTest{
     private CreateUsuarioService createUsuarioService;
     @Test
     @DisplayName("Guarda & Retorna ResponseEntity_Created")
-    void itShouldReturnResponseEntity_StatusCreatedOnSave(){
+    void itShouldReturnResponseEntity_StatusCreatedOnSave() throws BusinessRuleException, EntityAlreadyExistsException {
         CreateDatoPersonalDTO datoDTO=new CreateDatoPersonalDTO(
                 "Rubby",
                 "Gata",
