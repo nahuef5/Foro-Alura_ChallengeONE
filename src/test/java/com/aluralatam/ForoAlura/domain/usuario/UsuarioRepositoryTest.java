@@ -16,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UsuarioRepositoryTest{
     @Autowired
     private UsuarioRepository usuarioRepository;
-
     private final String nombre="Rubby";
     private final String apellido="Gata";
     private final String pais="Argentina";

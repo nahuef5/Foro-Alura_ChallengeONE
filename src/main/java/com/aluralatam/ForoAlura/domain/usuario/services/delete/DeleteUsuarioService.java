@@ -130,7 +130,7 @@ public class DeleteUsuarioService{
         if(usuario.isActivo())
             throw new AccountActivationException(alreadyActivated);
         usuarioRepository.delete(usuario);
-        return ResponseEntity.ok().body(responseEliminated);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(responseEliminated);
     }
     /**
      * Elimina una lista de cuentas de usuario en lote de la ddbb.

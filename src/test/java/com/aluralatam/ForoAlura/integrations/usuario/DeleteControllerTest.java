@@ -5,24 +5,25 @@ import com.aluralatam.ForoAlura.domain.usuario.model.utils.Countries;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.*;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.StringUtils;
 import java.time.*;
 import java.util.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
 @AutoConfigureMockMvc
-public class ModifyControllerTest{
+public class DeleteControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -59,11 +60,11 @@ public class ModifyControllerTest{
         final String password="Password_15379";
         final CreateDatoPersonalDTO data=new CreateDatoPersonalDTO
                 (names,
-                 lastnames,
-                 born,
-                 generateValidCountry(),
-                 FAKER.address().state(),
-                 FAKER.address().city()
+                        lastnames,
+                        born,
+                        generateValidCountry(),
+                        FAKER.address().state(),
+                        FAKER.address().city()
                 );
         final CreateUsuarioDTO createUser=new CreateUsuarioDTO(
                 data,
@@ -72,6 +73,8 @@ public class ModifyControllerTest{
                 password
         );
         Usuario usuario=new Usuario(createUser);
+        //setear activo a false
+        usuario.setActivo(false);
         return repository.save(usuario);
     }
     private List<Long> generateUsersList(){
@@ -82,75 +85,17 @@ public class ModifyControllerTest{
         return Arrays.asList(usuario.getId(),user.getId(),us.getId(),u.getId());
     }
     private Usuario getUser(Long id){
-        return repository.findById(id).get();
+        return repository.findById(id).orElse(null);
     }
     @Test
-    @DisplayName("Update-Data-Usuario+HttpStatus")
-    public void itShouldBeAbleToUpdateUserAndReturnResponseEntity()throws Exception{
+    @DisplayName("Delete Ususario + HttpStatus")
+    public void itShouldBeAbleToDeleteAccount()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         final Long id=usuario.getId();
-        //nombre
-        var names=usuario.getDato().getNombre();
-        String [] nameParts=names.split(" ");
-        final String firstName=nameParts[0];
-        //apellido
-        var lastnames=usuario.getDato().getApellido();
-        String [] lastnameParts=lastnames.split(" ");
-        final String surname=lastnameParts[0];
-        //capital
-        final String state=FAKER.address().state();
-        final String city=FAKER.address().city();
-        //dto
-        UpdateDatoPersonalDTO dto=new UpdateDatoPersonalDTO(
-            firstName,
-            surname,
-            state,
-            city
-        );
-        var jsonDTO=objectMapper.writeValueAsString(dto);
-        mockMvc.perform(put(BASE_URL+"/update-data/{id}",id)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonDTO)
-        )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.httpStatus").value("OK"))
-                .andExpect(jsonPath("$.respuesta").value("RECURSO MODIFICADO EXITOSAMENTE."))
-                .andDo(print())
-                .andReturn();
-        Usuario updated=repository.findById(id).get();
-        assertEquals(firstName, updated.getDato().getNombre());
-        assertEquals(surname,updated.getDato().getApellido());
-        assertEquals(state,updated.getDato().getProvincia());
-        assertEquals(city,updated.getDato().getLocalidad());
-    }
-    @Test
-    @DisplayName("Generate New Password+HttpStatus")
-    public void itShouldBeAbleToGenerateANewPassword()throws Exception{
-        Usuario usuario=seedUsuarioInDDBB();
-        var email=usuario.getEmail();
-        var password="Abcdef_12345";
-        NuevaContrasena dto=new NuevaContrasena(email,password,password);
-        var jsonDTO=objectMapper.writeValueAsString(dto);
-        mockMvc.perform(patch(BASE_URL+"/new-password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonDTO)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.httpStatus").value("OK"))
-                .andExpect(jsonPath("$.respuesta").value("RECURSO MODIFICADO EXITOSAMENTE."))
-                .andDo(print())
-                .andReturn();
-        Usuario updated=repository.findByEmail(email).get();
-        assertEquals(password, updated.getContrasena());
-    }
-    @Test
-    @DisplayName("Disable Account + HttpStatus")
-    public void itShouldBeAbleToDisableAccount()throws Exception{
-        Usuario usuario=seedUsuarioInDDBB();
-        final Long id=usuario.getId();
+
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         var jsonDTO=objectMapper.writeValueAsString(dto);
-        mockMvc.perform(patch(BASE_URL+"/disable-user")
+        mockMvc.perform(delete(BASE_URL+"/delete-user")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonDTO)
                 )
@@ -159,11 +104,11 @@ public class ModifyControllerTest{
                 .andExpect(jsonPath("$.respuesta").value("ELIMINADO EXITOSAMENTE."))
                 .andDo(print())
                 .andReturn();
-        Usuario updated=repository.findById(id).get();
-        assertEquals(false, updated.isActivo());
+        Usuario deleted=repository.findById(id).orElse(null);
+        assertNull(deleted);
     }
     @Test
-    @DisplayName("Disable Accounts + HttpStatus")
+    @DisplayName("Delete Accounts + HttpStatus")
     public void itShouldBeAbleToDisableAccounts()throws Exception{
         List<Long>ids=generateUsersList();
         var remove=true;
@@ -171,9 +116,10 @@ public class ModifyControllerTest{
         var id2=ids.get(1);
         var id3=ids.get(2);
         var id4=ids.get(3);
+
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,remove);
         var jsonDTO=objectMapper.writeValueAsString(dto);
-        mockMvc.perform(patch(BASE_URL+"/disable-users")
+        mockMvc.perform(delete(BASE_URL+"/delete-users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonDTO)
                 )
@@ -189,28 +135,7 @@ public class ModifyControllerTest{
                 getUser(id4)
         );
         users.forEach(
-                u->assertFalse(u.isActivo())
+                u->assertNull(u)
         );
-    }
-    @Test
-    @DisplayName("Reactivate Account + HttpStatus")
-    public void itShouldBeAbleToReactivateAccount()throws Exception{
-        Usuario usuario=seedUsuarioInDDBB();
-        final String email=usuario.getEmail();
-        repository.setInactiveToUser(usuario.getId());
-        ByParameterDto mailDto=new ByParameterDto(email);
-        var jsonDTO=objectMapper.writeValueAsString(mailDto);
-        mockMvc.perform(patch(BASE_URL+"/reactive-users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonDTO)
-                )
-                .andExpect(status().isAccepted())
-                .andExpect(jsonPath("$.httpStatus").value("ACCEPTED"))
-                .andExpect(jsonPath("$.respuesta").value("RECURSO REACTIVADO EXITOSAMENTE"))
-                .andDo(print())
-                .andReturn();
-
-        Usuario updated=repository.findByEmail(email).get();
-        assertTrue(updated.isActivo());
     }
 }

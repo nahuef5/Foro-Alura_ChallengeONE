@@ -20,7 +20,7 @@ public class ReadUsuarioController {
         return service.getUserById(id);
     }
     @GetMapping("/getByEmail")
-    public ResponseEntity<Usuario>getByEmail(@Valid ByParameterDto dto) throws ResourceNotFoundException {
+    public ResponseEntity<Usuario>getByEmail(@RequestBody @Valid ByParameterDto dto) throws ResourceNotFoundException {
         final String email=dto.parameter();
         return service.getUserByEmail(email);
     }
@@ -32,7 +32,7 @@ public class ReadUsuarioController {
             (value="pageSize", defaultValue="10", required=true) String pageSize,
         @RequestParam
             (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-        @Valid ByParameterDto dto
+        @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String nombreOApellido=dto.parameter();
         return service.getAllUsersByNameOrSurname(
@@ -49,7 +49,7 @@ public class ReadUsuarioController {
                     (value="pageSize", defaultValue="10", required=true) String pageSize,
             @RequestParam
                     (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-            @Valid ByParameterDto dto
+            @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String nombreOApellido=dto.parameter();
         return service.getAllActiveUsersByNameOrSurname(
@@ -66,7 +66,7 @@ public class ReadUsuarioController {
                     (value="pageSize", defaultValue="10", required=true) String pageSize,
             @RequestParam
                     (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-            @Valid ByParameterDto dto
+            @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String nombreOApellido=dto.parameter();
         return service.getAllInactiveUsersByNameOrSurname(
@@ -99,10 +99,10 @@ public class ReadUsuarioController {
                     (value="pageSize", defaultValue="10", required=true) String pageSize,
             @RequestParam
                     (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-            @Valid ByParameterDto dto
+            @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String pais=dto.parameter();
-        return service.getAllInactiveUsersByNameOrSurname(
+        return service.getAllUsersByCountry(
                 pais,
                 pageNumber,
                 pageSize,
@@ -116,7 +116,7 @@ public class ReadUsuarioController {
                     (value="pageSize", defaultValue="10", required=true) String pageSize,
             @RequestParam
                     (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-            @Valid ByParameterDto dto
+            @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String pais=dto.parameter();
         return service.getAllActiveUsersByCountry(
@@ -133,7 +133,7 @@ public class ReadUsuarioController {
                     (value="pageSize", defaultValue="10", required=true) String pageSize,
             @RequestParam
                     (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams,
-            @Valid ByParameterDto dto
+            @RequestBody @Valid ByParameterDto dto
     ) throws BusinessRuleException, ResourceNotFoundException {
         final String pais=dto.parameter();
         return service.getAllInactiveUsersByCountry(
@@ -142,18 +142,4 @@ public class ReadUsuarioController {
                 pageSize,
                 sortingParams);
     }
-    /*@GetMapping("/")
-    public ResponseEntity<List<Usuario>>getAllToCommonUsers(
-            @RequestParam
-                    (value="pageNumber", defaultValue="0", required=true) String pageNumber,
-            @RequestParam
-                    (value="pageSize", defaultValue="10", required=true) String pageSize,
-            @RequestParam
-                    (value="sort",defaultValue="dato.apellido, asc",required=true)String[] sortingParams
-    ){
-        return service.getAllUsersToCommonUsers(
-                pageNumber,
-                pageSize,
-                sortingParams);
-    }*/
 }

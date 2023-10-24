@@ -33,7 +33,7 @@ public class ModifyUsuarioController{
     public ResponseEntity<Response>disableAccounts(@RequestBody RemoveListaUsuariosDto dto) throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         return service.disableAccounts(dto);
     }
-    @PatchMapping("/reactive-users/{email}")
+    @PatchMapping("/reactive-users")
     public ResponseEntity<Response>reactivateAccountByEmail(
             @RequestBody @Valid ByParameterDto emailDto) throws ResourceNotFoundException, AccountActivationException {
         final String email=emailDto.parameter();

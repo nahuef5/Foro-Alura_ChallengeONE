@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.*;
 public class DeleteUsuarioController{
     private final DeleteUsuarioService service;
     @DeleteMapping("/delete-user")
-    public ResponseEntity<Response>deleteUserFromDDBB(RemoveUsuarioDto dto) throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
+    public ResponseEntity<Response>deleteUserFromDDBB(@RequestBody RemoveUsuarioDto dto) throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
         return service.deleteUserFromDDBB(dto);
     }
     @DeleteMapping("/delete-users")
-    public ResponseEntity<Response>deleteUsersFromDDBB(RemoveListaUsuariosDto dto) throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
+    public ResponseEntity<Response>deleteUsersFromDDBB(@RequestBody RemoveListaUsuariosDto dto) throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
         return service.deleteUsersFromDDBB(dto);
     }
 }

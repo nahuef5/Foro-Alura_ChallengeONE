@@ -1,7 +1,6 @@
 package com.aluralatam.ForoAlura.integrations;
 import com.aluralatam.ForoAlura.domain.curso.models.dtos.*;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
-import com.aluralatam.ForoAlura.domain.curso.services.CursoServiceImpl;
 import com.aluralatam.ForoAlura.domain.curso.services.repository.CursoRepository;
 import com.aluralatam.ForoAlura.global.tools.*;
 import com.fasterxml.jackson.core.type.TypeReference;

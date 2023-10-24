@@ -87,7 +87,7 @@ public class DeleteUsuarioServiceTest {
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
         ResponseEntity<Response> responseEntity=deleteUsuarioService.deleteUserFromDDBB(dto);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
         assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
 

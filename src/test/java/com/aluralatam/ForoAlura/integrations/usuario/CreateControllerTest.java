@@ -2,7 +2,6 @@ package com.aluralatam.ForoAlura.integrations.usuario;
 import com.aluralatam.ForoAlura.domain.usuario.model.dto.*;
 import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
 import com.aluralatam.ForoAlura.domain.usuario.model.utils.Countries;
-import com.aluralatam.ForoAlura.domain.usuario.services.create.CreateUsuarioService;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.tools.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,9 +16,9 @@ import org.springframework.test.web.servlet.*;
 import org.springframework.util.StringUtils;
 import java.time.*;
 import java.util.*;
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
@@ -77,20 +76,17 @@ public class CreateControllerTest{
         );
         Usuario usuario=new Usuario(createUser);
         var jsonDTO=objectMapper.writeValueAsString(createUser);
-        MvcResult result=mockMvc.perform(post(BASE_URL+"/register")
+        mockMvc.perform(post(BASE_URL+"/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonDTO)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.httpStatus").value("CREATED"))
                 .andExpect(jsonPath("$.respuesta").value("RECURSO CREADO EXITOSAMENTE."))
+                .andDo(print())
                 .andReturn();
-        var jsonResponse = result.getResponse().getContentAsString();
-        Response response = objectMapper.readValue(jsonResponse, Response.class);
-        List<Usuario> usuarioList=repository.findAll();
 
-        assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-        assertEquals(Message.CREATED, response.getRespuesta());
+        List<Usuario> usuarioList=repository.findAll();
         assertThat(usuarioList).usingElementComparatorIgnoringFields("id")
                 .contains(usuario);
     }
