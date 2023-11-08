@@ -21,26 +21,44 @@ public class CursoServiceImplTest {
     private CursoRepository cursoRepository;
     @InjectMocks
     private CursoServiceImpl cursoService;
-    private Curso curso;
-    private final Long id=1L;
-    private final String nombre="Java";
-    private final String categoria="Tratamiento de Excepciones";
-    @BeforeEach
-    void setUp(){
-        curso=Curso.builder()
-                .id(id)
-                .nombre(nombre)
-                .categoria(categoria)
-                .inactivo(false)
-                .build();
+    private final Curso curso=Curso.builder()
+            .id(id)
+            .nombre(nombre)
+            .categoria(categoria)
+            .inactivo(false)
+            .build();
+    private static final Long id=1L;
+    private static final String nombre="Java";
+    private static final String categoria="Tratamiento de Excepciones";
+    private final List<Curso> cursos = new ArrayList<>();
+    private final QueryPageable queryPageable=new QueryPageable(){
+        private final Integer page=1,elementByPage=10;
+        private final String[] sortingParams=new String[]{"curso.nombre", "asc"};
+        @Override
+        public Integer getPage() {
+            return page;
+        }
+        @Override
+        public Integer getElementByPage(){
+            return elementByPage;
+        }
+        @Override
+        public String[] sortingParams(){
+            return sortingParams;
+        }};
+    private PageRequest buildPageRequest() throws BusinessRuleException {
+        return PageRequestConstructor.buildPageRequest(queryPageable);
+    }
+    private Page<Curso> buildPage() throws BusinessRuleException {
+        cursos.add(curso);
+        return new PageImpl<>(cursos,buildPageRequest(),cursos.size());
     }
     @AfterEach
     void tearDown() {
-        curso=null;
+        cursos.clear();
     }
-    // TEST SAVE METHOD
     @Test
-    @DisplayName("Guarda & Retorna: ResponseEntity_Created")
+    @DisplayName("(Crear)Retorna_ResponseEntity_Created")
     void itShouldReturnResponseEntity_StatusCreatedOnSave() throws EntityAlreadyExistsException {
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsByNombreAndCategoria(
@@ -51,7 +69,6 @@ public class CursoServiceImplTest {
         ResponseEntity<Response> responseEntity=cursoService.save(dto);
 
         assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.CREATED,responseEntity.getBody().getRespuesta());
 
         verify(cursoRepository, times(1))
@@ -60,12 +77,11 @@ public class CursoServiceImplTest {
                 .save(any(Curso.class));
     }
     @Test
-    @DisplayName("No_Guarda. Lanza EntityAlreadyExistsException")
+    @DisplayName("(Crear)Lanza_EntityAlreadyExistsException_")
     void itShouldThrowEntityAlreadyExistsExceptionOnSave(){
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsByNombreAndCategoria(
                 anyString(),anyString())).thenReturn(true);
-
         assertThrows(EntityAlreadyExistsException.class,
                 ()->cursoService.save(dto)
         );
@@ -74,33 +90,28 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never())
                 .save(any(Curso.class));
     }
-    // TEST UPDATE METHOD
     @Test
-    @DisplayName("Actualiza & Retorna: ResponseEntity_OK")
+    @DisplayName("(Actualizar)Retorna_ResponseEntity_OK")
     void itShouldReturnResponseEntity_StatusOkOnUpdate() throws EntityAlreadyExistsException, ResourceNotFoundException {
-
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
         when(cursoRepository.existsByNombreAndCategoria(anyString(), anyString())).thenReturn(false);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(new Curso()));
-
         ResponseEntity<Response>responseEntity=cursoService.update(id,dto);
-
         assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.UPDATED,responseEntity.getBody().getRespuesta());
 
         verify(cursoRepository,times(1)).existsById(id);
-        verify(cursoRepository,times(1)).existsByNombreAndCategoria(dto.nombre(),dto.categoria());
+        verify(cursoRepository,times(1))
+                .existsByNombreAndCategoria(dto.nombre(),dto.categoria());
         verify(cursoRepository,times(1)).findById(id);
         verify(cursoRepository,times(1)).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No_Actualiza. Lanza ResourceNotFoundException")
+    @DisplayName("(Actualizar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnUpdate(){
         CUCursoDto dto=new CUCursoDto(nombre,categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(false);
-
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.update(id,dto)
         );
@@ -110,40 +121,38 @@ public class CursoServiceImplTest {
                 .save(any(Curso.class));
     }
     @Test
-    @DisplayName("No_Actualiza. Lanza: EntityAlreadyExistsException")
+    @DisplayName("(Actualizar)Lanza_EntityAlreadyExistsException")
     void itShouldThrowEntityAlreadyExistsExceptionOnUpdate(){
-
         CUCursoDto dto = new CUCursoDto(nombre, categoria);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
-        when(cursoRepository.existsByNombreAndCategoria(anyString(), anyString())).thenReturn(true);
-
-        assertThrows(EntityAlreadyExistsException.class, () -> cursoService.update(id, dto));
-
+        when(cursoRepository.existsByNombreAndCategoria(anyString(), anyString()))
+                .thenReturn(true);
+        assertThrows(
+                EntityAlreadyExistsException.class,
+                () -> cursoService.update(id, dto)
+        );
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository, times(1))
                 .existsByNombreAndCategoria(dto.nombre(), dto.categoria());
         verify(cursoRepository, never()).findById(id);
         verify(cursoRepository, never()).save(any(Curso.class));
     }
-
     @Test
-    @DisplayName("Activa & Retorna: ResponseEntity_Accepted")
+    @DisplayName("(Activar)Retorna_ResponseEntity_Accepted")
     void itShouldResponseEntity_StatusAcceptedOnActivate() throws AccountActivationException, ResourceNotFoundException {
         curso.setInactivo(true);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         when(cursoRepository.save(any(Curso.class))).thenReturn(curso);
 
         ResponseEntity<Response>responseEntity=cursoService.activate(id);
-
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals("RECURSO REACTIVADO EXITOSAMENTE", responseEntity.getBody().getRespuesta());
 
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository, times(1)).save(curso);
     }
     @Test
-    @DisplayName("No_Activa. Lanza: AccountActivationException")
+    @DisplayName("(Activar)Lanza_AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnActivate(){
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         assertThrows(AccountActivationException.class,
@@ -153,7 +162,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never()).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No_Activa. Lanza: ResourceNotFoundException")
+    @DisplayName("(Activar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnActivate(){
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
@@ -162,30 +171,24 @@ public class CursoServiceImplTest {
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(any(Curso.class));
     }
-    // TEST DELETE METHOD
     @Test
-    @DisplayName("Elimina & Retorna: ResponseEntity_Accepted")
+    @DisplayName("(Eliminar)Retorna_ResponseEntity_Accepted")
     void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB() throws BusinessRuleException, ResourceNotFoundException {
         boolean confirm=true;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(true);
-
         ResponseEntity<Response>responseEntity=cursoService.delete(deleteDto);
-
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,times(1)).deleteById(id);
     }
     @Test
-    @DisplayName("No_Elimina. Lanza: ResourceNotFoundException")
+    @DisplayName("(Eliminar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDeleteFromDDBB(){
         boolean confirm=true;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.existsById(anyLong())).thenReturn(false);
-
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.delete(deleteDto)
         );
@@ -193,7 +196,7 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never()).deleteById(id);
     }
     @Test
-    @DisplayName("No_Elimina. Lanza BusinessRuleException")
+    @DisplayName("(Eliminar)Lanza_BusinessRuleException")
     void itShouldThrowNotConfirmedExceptionOnDeleteFromDDBB(){
         boolean confirm=false;
         DeleteOrDesableCursoDto deleteDto=new DeleteOrDesableCursoDto(id,confirm);
@@ -205,9 +208,8 @@ public class CursoServiceImplTest {
         verify(cursoRepository, times(1)).existsById(id);
         verify(cursoRepository,never()).deleteById(id);
     }
-    // TEST DISABLE METHOD
     @Test
-    @DisplayName("Desactiva & Retorna: ResponseEntity_Accepted")
+    @DisplayName("(Desactivar)Retorna_ResponseEntity_Accepted")
     void itShouldReturnResponseEntity_StatusAcceptedOnDisable() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         boolean inactivo=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,inactivo);
@@ -216,19 +218,16 @@ public class CursoServiceImplTest {
         ResponseEntity<Response>responseEntity=cursoService.disable(disableDto);
 
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,times(1)).save(curso);
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza ResourceNotFoundException")
+    @DisplayName("(Desactivar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDisable(){
         boolean confirm=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class,
                 ()->cursoService.disable(disableDto)
         );
@@ -236,12 +235,11 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never()).save(any(Curso.class));
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza NotConfirmedException")
+    @DisplayName("(Desactivar)Lanza_BusinessRuleException")
     void itShouldThrowNotConfirmedExceptionOnDisable(){
         boolean confirm=false;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-
         assertThrows(BusinessRuleException.class,
                 ()->cursoService.disable(disableDto)
         );
@@ -249,34 +247,29 @@ public class CursoServiceImplTest {
         verify(cursoRepository,never()).save(curso);
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza AccountActivationException")
+    @DisplayName("(Desactivar)Lanza__AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnDisable(){
         boolean confirm=true;
         DeleteOrDesableCursoDto disableDto=new DeleteOrDesableCursoDto(id,confirm);
         curso.setInactivo(true);
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
-
         assertThrows(AccountActivationException.class,
                 ()->cursoService.disable(disableDto)
         );
         verify(cursoRepository, times(1)).findById(id);
         verify(cursoRepository,never()).save(curso);
     }
-    // TEST GET-BY-ID METHOD
     @Test
-    @DisplayName("Obtiene:ID & Retorna: ResponseEntity_FOUND")
+    @DisplayName("(Get)Retorna_ResponseEntity_FOUND(ID)")
     void itShouldReturnResponseEntity_StatusFoundOnGetById() throws ResourceNotFoundException {
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.of(curso));
         ResponseEntity<Curso>responseEntity=cursoService.findById(id);
-
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(curso, responseEntity.getBody());
-
         verify(cursoRepository, times(1)).findById(id);
     }
     @Test
-    @DisplayName("No_Obtiene:ID. Lanza ResourceNotFoundException")
+    @DisplayName("(Get)Lanza_ResourceNotFoundException(ID)")
     void itShouldThrowResourceNotFoundExceptionOnGetById(){
         when(cursoRepository.findById(anyLong())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
@@ -286,56 +279,71 @@ public class CursoServiceImplTest {
     }
     // TEST GET-BY-NOMBRE-AND-CATEGORIA METHOD
     @Test
-    @DisplayName("Obtiene:NOMBRE & CATEGORIA. Retorna ResponseEntity_FOUND")
-    void itShouldReturnResponseEntity_StatusFoundOnGetByNombreAndCategoria() throws ResourceNotFoundException{
-        var getByNombre=this.nombre;
-        var getByCategoria=this.categoria;
+    @DisplayName("(Get)Retorna_ResponseEntity_FOUND(Nombre-Categoria)")
+    void itShouldReturnResponseEntity_StatusFoundOnGetByNombreAndCategoria() throws ResourceNotFoundException, BusinessRuleException {
+        var getByNombre=nombre;
+        var getByCategoria=categoria;
         when(cursoRepository.findByNombreAndCategoria
                 (anyString(),anyString())).thenReturn(Optional.of(curso));
-        ResponseEntity<Curso>responseEntity=cursoService.findByNombreAndCategoria(getByNombre, getByCategoria);
+        ResponseEntity<Curso>responseEntity=cursoService.findByNombreAndCategoria(
+                getByNombre,
+                getByCategoria
+        );
 
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(curso, responseEntity.getBody());
 
         verify(cursoRepository, times(1)).findByNombreAndCategoria(getByNombre, getByCategoria);
     }
     @Test
-    @DisplayName("No_Obtiene:NOMBRE & CATEGORIA. Lanza ResourceNotFoundException")
+    @DisplayName("(Get)Lanza_ResourceNotFoundException(Nombre-Categoria)")
     void itShouldThrowResourceNotFoundExceptionOnGetByNombreAndCategoria(){
         when(cursoRepository.findByNombreAndCategoria
                 (anyString(),anyString())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
-                ()->cursoService.findByNombreAndCategoria(this.nombre,this.categoria)
+                ()->cursoService.findByNombreAndCategoria(nombre,categoria)
         );
         verify(cursoRepository, times(1))
-                .findByNombreAndCategoria(this.nombre,this.categoria);
+                .findByNombreAndCategoria(nombre,categoria);
     }
-    // TEST GET-ALL-BY-PAGINATION METHOD
     @Test
-    @DisplayName("Encuentra cursos por paginacion")
-    void itShouldReturnPaginationOfActiveCursos() throws EmptyEntityListException {
-        var pageNumber = 1;
-        var pageSize = 15;
-        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
-        List<Curso> cursos = Arrays.asList(
-                curso,
-                Curso.builder().id(2L).nombre(this.nombre).categoria("JDBC").inactivo(true).build(),
-                Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build(),
-                Curso.builder().id(4L).nombre(this.nombre).categoria("JUnit").inactivo(false).build()
+    @DisplayName("(Get)Lanza_BusinessRuleException(Nombre:numerico)")
+    void itShouldThrowBusinessRuleExceptionOnGetOneByNombre(){
+        assertThrows(BusinessRuleException.class,
+                ()->cursoService.findByNombreAndCategoria("456",categoria)
         );
-        Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
-        when(cursoRepository.findAll(pageRequest)).thenReturn(cursoPage);
-
+        verify(cursoRepository, never())
+                .findByNombreAndCategoria("456",categoria);
+    }
+    @Test
+    @DisplayName("(Get)Lanza_BusinessRuleException(Categoria:vacio)")
+    void itShouldThrowBusinessRuleExceptionOnGetOneByCategoria(){
+        assertThrows(BusinessRuleException.class,
+                ()->cursoService.findByNombreAndCategoria(nombre,"")
+        );
+        verify(cursoRepository, never())
+                .findByNombreAndCategoria(nombre,"");
+    }
+    @Test
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Curso>")
+    void itShouldReturnPaginationOfActiveCursos() throws EmptyEntityListException, BusinessRuleException {
+        cursos.add(Curso.builder()
+                .id(2L).nombre(nombre).categoria("JDBC").inactivo(true)
+                .build());
+        cursos.add(Curso.builder()
+                .id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true)
+                .build());
+        cursos.add(Curso.builder()
+                .id(4L).nombre(nombre).categoria("JUnit").inactivo(false)
+                .build());
+        Page<Curso> cursoPage = buildPage();
+        when(cursoRepository.findAll(buildPageRequest())).thenReturn(cursoPage);
         ResponseEntity<List<Curso>>responseEntity=
-                cursoService.findAllByPagination(pageNumber+"", pageSize+"");
+                cursoService.findAllByPagination(queryPageable);
         List<Curso> responseBody=responseEntity.getBody();
-
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseBody);
         assertFalse(responseBody.isEmpty());
         assertEquals(2, responseBody.size());
-
         //recorremos cada elemento de la pagina y cercioramos que inactivo==false
         responseBody.forEach(curso -> assertFalse(curso.isInactivo()));
         //lista de cursos filtrados
@@ -344,76 +352,35 @@ public class CursoServiceImplTest {
                 .toList();
         //creamos una lista de cursos no filtrados con inactivo==true
         List<Curso> unfilteredCourses = cursos.stream()
-                .filter(
-                        curso-> curso.isInactivo()
-                )
+                .filter(curso-> curso.isInactivo())
                 .toList();
         var expected=unfilteredCourses.size();
         var actual=cursos.size() - filteredCourses.size();
         assertEquals(expected, actual);
-
-        verify(cursoRepository).findAll(pageRequest);
+        verify(cursoRepository).findAll(buildPageRequest());
     }
     @Test
-    @DisplayName("Lista_Vacía. Lanza EmptyEntityListException")
-    void itShouldThrowEmptyEntityListExceptionOnFindAllCursosByPagination() {
-        var pageNumber = 1;
-        var pageSize = 15;
-        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
-        when(cursoRepository.findAll(pageRequest)).thenReturn(Page.empty());
-
+    @DisplayName("Lanza_EmptyEntityListException:Lista<Curso>vacia")
+    void itShouldThrowEmptyEntityListExceptionOnFindAllCursosByPagination() throws BusinessRuleException {
+        when(cursoRepository.findAll(buildPageRequest())).thenReturn(Page.empty());
         assertThrows(EmptyEntityListException.class,
-                ()->cursoService.findAllByPagination(pageNumber+"", pageSize+"")
+                ()->cursoService.findAllByPagination(queryPageable)
         );
-        verify(cursoRepository).findAll(pageRequest);
+        verify(cursoRepository).findAll(buildPageRequest());
     }
     @Test
-    @DisplayName("Numero_Pagina o Elementos_Pagina menores <1. Lanza IllegalArgumentException")
-    void itShouldReturnBadRequestWhenPageOrSizeLessThanOne(){
-        var pageNumber = -1;
-        var pageSize = 15;
-        assertThrows(IllegalArgumentException.class,
-                ()->cursoService.findAllByPagination(pageNumber+"",pageSize+"")
-        );
-        verify(cursoRepository, never()).findAll(any(Pageable.class));
-    }
-    @Test
-    @DisplayName("Lanza: NumberFormatException")
-    void itShouldReturnBadRequestOnNumberFormatExceptionOnFindALl(){
-        var pageNumber = "asd";
-        var pageSize = 15;
-        assertThrows(NumberFormatException.class,
-                ()->cursoService.findAllByPagination
-                        (pageNumber, String.valueOf(pageSize))
-        );
-        verify(cursoRepository, never()).findAll(any(Pageable.class));
-    }
-    // TEST GET-ALL-BY-NOMBRE-AND-PAGINATION METHOD
-    @Test
-    @DisplayName("Encuentra cursos con nombre por paginación")
-    void itShouldReturnPaginationOfCursosByNombre()throws ResourceNotFoundException {
-        var pageNumber = "1";
-        var pageSize = "15";
-        var numPag=Integer.parseInt(pageNumber);
-        var tamPag=Integer.parseInt(pageSize);
-
-        PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
-        List<Curso> cursos = Arrays.asList(
-                curso,
-                Curso.builder().id(2L).nombre(nombre).categoria("JDBC").inactivo(true).build(),
-                Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build(),
-                Curso.builder().id(4L).nombre(nombre).categoria("JUnit").inactivo(false).build()
-        );
-        Page<Curso> cursoPage = new PageImpl<>(cursos, pageRequest, cursos.size());
-        when(cursoRepository.existsByNombre(this.nombre)).thenReturn(true);
-        when(cursoRepository.search(this.nombre, pageRequest)).thenReturn(cursoPage);
-
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Curso>(NOMBRE)")
+    void itShouldReturnPaginationOfCursosByNombre() throws ResourceNotFoundException, BusinessRuleException {
+        cursos.add(Curso.builder().id(2L).nombre(nombre).categoria("JDBC").inactivo(true).build());
+        cursos.add(Curso.builder().id(3L).nombre("Ruby").categoria("P-O-O").inactivo(true).build());
+        cursos.add(Curso.builder().id(4L).nombre(nombre).categoria("JUnit").inactivo(false).build());
+        Page<Curso> cursoPage = buildPage();
+        when(cursoRepository.existsByNombre(nombre)).thenReturn(true);
+        when(cursoRepository.search(nombre, buildPageRequest())).thenReturn(cursoPage);
         ResponseEntity<List<Curso>> responseEntity=
-                cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
+                cursoService.findAllByNombreAndPagination(nombre,queryPageable);
         List<Curso>responseBody=responseEntity.getBody();
-
         assertEquals(HttpStatus.FOUND, responseEntity.getStatusCode());
-        assertNotNull(responseBody);
         assertFalse(responseBody.isEmpty());
         assertEquals(2, responseBody.size());
         //recorremos cada elemento de la pagina y cercioramos que inactivo==false
@@ -425,67 +392,33 @@ public class CursoServiceImplTest {
         //creamos una lista de cursos no filtrados con nombre distinto o inactivo==true
         List<Curso> unfilteredCourses = cursos.stream()
                 .filter(
-                        curso->
-                                curso.isInactivo()
-                                        ||
-                                !curso.getNombre().equals(nombre)
-                )
-                .toList();
+                        curso->curso.isInactivo() ||
+                        !curso.getNombre().equals(nombre)
+                ).toList();
         var expected=unfilteredCourses.size();
         var actual=cursos.size() - filteredCourses.size();
         assertEquals(expected, actual);
-
-        verify(cursoRepository, times(1)).existsByNombre(this.nombre);
-        verify(cursoRepository).search(this.nombre,pageRequest);
+        verify(cursoRepository, times(1)).existsByNombre(nombre);
+        verify(cursoRepository).search(nombre,buildPageRequest());
     }
     @Test
-    @DisplayName("No_Encuentra cursos con nombre. Lanza ResourceNotFoundException")
-    void itShouldThrowResourceNotFoundExceptionWhenSearchingCursosByNombre() {
-        var pageNumber = "1";
-        var pageSize = "15";
-        var numPag=Integer.parseInt(pageNumber);
-        var tamPag=Integer.parseInt(pageSize);
-        Pageable pageable = PageRequest.of(numPag-1, tamPag);
+    @DisplayName("Lanza_ResourceNotFoundException:Lista<Curso>(NOMBRE))")
+    void itShouldThrowResourceNotFoundExceptionWhenSearchingCursosByNombre()throws BusinessRuleException {
         when(cursoRepository.existsByNombre(anyString())).thenReturn(false);
-
         assertThrows(ResourceNotFoundException.class,
                 () -> cursoService.findAllByNombreAndPagination
-                        (this.nombre, pageNumber,pageSize)
+                        (nombre, queryPageable)
         );
-        verify(cursoRepository, times(1)).existsByNombre(this.nombre);
-        verify(cursoRepository, never()).search(this.nombre,pageable);
+        verify(cursoRepository, times(1)).existsByNombre(nombre);
+        verify(cursoRepository, never()).search(nombre,buildPageRequest());
     }
     @Test
-    @DisplayName("Lanza un NumberFormatException")
-    void itShouldReturnBadRequestWhenSizeIsLessThanOneWhenSearchingByNombre(){
-        var pageNumber ="15";
-        var pageSize ="asd";
-
-        assertThrows(NumberFormatException.class, () -> {
-            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
-        });
-        verify(cursoRepository, never()).existsByNombre(this.nombre);
-        verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
-    }
-    @Test
-    @DisplayName("Lanza un NumberFormatException")
-    void itShouldReturnBadRequestWhenPageIsLessThanOneWhenSearchingByNombre(){
-        var pageNumber ="asd";
-        var pageSize ="15";
-        assertThrows(NumberFormatException.class, () -> {
-            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
-        });
-        verify(cursoRepository, never()).existsByNombre(this.nombre);
-        verify(cursoRepository, never()).search(anyString(),any(Pageable.class));
-    }
-    @Test
-    @DisplayName("Numero_Pagina o Elementos_Pagina menores <1. Lanza IllegalArgumentException")
-    void itShouldReturnBadRequestWhenPageOrSizeLessThanOneWhenFindByNombre(){
-        var pageNumber = "-1";
-        var pageSize = "15";
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            cursoService.findAllByNombreAndPagination(this.nombre,pageNumber, pageSize);
-        });
+    @DisplayName("Lanza_BusinessRuleException:Lista<Curso>(NOMBRE:vacio))")
+    void itShouldThrowBusinessRuleExceptionWhenSearchingCursosByNombre() throws BusinessRuleException {
+        assertThrows(BusinessRuleException.class,
+                () -> cursoService.findAllByNombreAndPagination
+                        ("", queryPageable)
+        );
+        verify(cursoRepository, never()).search("",buildPageRequest());
     }
 }

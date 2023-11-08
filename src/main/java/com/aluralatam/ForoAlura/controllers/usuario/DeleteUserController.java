@@ -1,4 +1,4 @@
-package com.aluralatam.ForoAlura.controller.usuarioControllers;
+package com.aluralatam.ForoAlura.controllers.usuario;
 import com.aluralatam.ForoAlura.domain.usuario.model.dto.RemoveListaUsuariosDto;
 import com.aluralatam.ForoAlura.domain.usuario.model.dto.RemoveUsuarioDto;
 import com.aluralatam.ForoAlura.domain.usuario.services.delete.DeleteUsuarioService;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/usuario")
 @RequiredArgsConstructor
-public class DeleteUsuarioController{
+public class DeleteUserController {
     private final DeleteUsuarioService service;
     @DeleteMapping("/delete-user")
     public ResponseEntity<Response>deleteUserFromDDBB(@RequestBody RemoveUsuarioDto dto) throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {

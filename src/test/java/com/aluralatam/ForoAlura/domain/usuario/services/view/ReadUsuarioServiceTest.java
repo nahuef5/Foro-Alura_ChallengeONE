@@ -3,6 +3,7 @@ import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
 import com.aluralatam.ForoAlura.domain.usuario.model.utils.DatoPersonal;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
+import com.aluralatam.ForoAlura.global.tools.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -13,25 +14,25 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
-public class ReadUsuarioServiceTest {
+public class ReadUsuarioServiceTest{
     @Mock
     private UsuarioRepository usuarioRepository;
     @InjectMocks
     private ReadUsuarioService readUsuarioService;
     private Usuario usuario;
     private Long id=1L;
-    List<Usuario> usuarios = new ArrayList<>();
+    private List<Usuario> usuarios = new ArrayList<>();
     @BeforeEach
     void setUp() {
         DatoPersonal dato=DatoPersonal.builder()
                 .nombre("Rubby")
-                .apellido("Gata")
+                .apellido("Test")
                 .pais("Argentina")
                 .build();
         usuario=Usuario.builder()
                 .id(id)
                 .dato(dato)
-                .email("rubbygata@email.com")
+                .email("rubbytest@email.com")
                 .build();
         usuarios.add(usuario);
     }
@@ -40,48 +41,42 @@ public class ReadUsuarioServiceTest {
         usuario=null;
         usuarios.clear();
     }
-    @Test
-    void itShouldThrowAnIllegalArgumentExceptionForCountryFieldValue() {
-        var pais = "asdasd";
-        var isCountry=readUsuarioService.isCountry(pais);
-        assertFalse(isCountry);
+    private final QueryPageable queryPageable=new QueryPageable(){
+        private final Integer page=1,elementByPage=10;
+        private final String[] sortingParams=new String[]{"curso.nombre", "asc"};
+        @Override
+        public Integer getPage() {
+            return page;
+        }
+        @Override
+        public Integer getElementByPage(){
+            return elementByPage;
+        }
+        @Override
+        public String[] sortingParams(){
+            return sortingParams;
+        }};
+    private PageRequest buildPageRequest()throws BusinessRuleException {
+        return PageRequestConstructor.buildPageRequest(queryPageable);
+    }
+    private Page<Usuario> buildPage() throws BusinessRuleException{
+        return new PageImpl<>(usuarios,buildPageRequest(),usuarios.size());
     }
     @Test
-    void itShouldThrowAnIllegalArgumentExceptionForNegativeValue() {
-        var pageNumber = "1";
-        var pageSize = "-10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        assertThrows(IllegalArgumentException.class,()->
-                readUsuarioService.buildPageRequest(pageNumber,
-                        pageSize,
-                        sortingParams)
-        );
-    }
-    @Test
-    void itShouldThrowAnIllegalArgumentExceptionForNonnumericValue() {
-        var pageNumber = "dewed1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        assertThrows(IllegalArgumentException.class,()->
-                readUsuarioService.buildPageRequest(pageNumber,
-                        pageSize,
-                        sortingParams)
-        );
-    }
-    @Test
-    @DisplayName("Obtiene:ID & Retorna: ResponseEntity_OK")
-    void itShouldReturnResponseEntity_StatusFoundOnGetById() throws ResourceNotFoundException {
+    @DisplayName("(GET)Retorna_ResponseEntity_OK(ID)")
+    void itShouldReturnResponseEntityWithAUserById()
+            throws ResourceNotFoundException
+    {
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
         ResponseEntity<Usuario> responseEntity=readUsuarioService.getUserById(id);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(usuario, responseEntity.getBody());
 
         verify(usuarioRepository, times(1)).findById(id);
     }
     @Test
-    @DisplayName("No_Obtiene:ID. Lanza ResourceNotFoundException")
+    @DisplayName("(Get)Lanza_ResourceNotFoundException(ID)")
     void itShouldThrowResourceNotFoundExceptionOnGetById(){
         when(usuarioRepository.findById(anyLong())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
@@ -90,19 +85,18 @@ public class ReadUsuarioServiceTest {
         verify(usuarioRepository, times(1)).findById(anyLong());
     }
     @Test
-    @DisplayName("Obtiene:Email & Retorna: ResponseEntity_OK")
-    void itShouldReturnResponseEntity_StatusOKOnGetByEmail() throws ResourceNotFoundException {
+    @DisplayName("(GET)Retorna_ResponseEntity_OK(EMAIL)")
+    void itShouldToReturnResponseEntityWithAUserByEmail()
+            throws ResourceNotFoundException
+    {
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(usuario));
         ResponseEntity<Usuario> responseEntity=readUsuarioService.getUserByEmail(anyString());
-
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(usuario, responseEntity.getBody());
-
         verify(usuarioRepository, times(1)).findByEmail(anyString());
     }
     @Test
-    @DisplayName("No_Obtiene:Email. Lanza ResourceNotFoundException")
+    @DisplayName("(GET)Lanza_ResourceNotFoundException(EMAIL)")
     void itShouldThrowResourceNotFoundExceptionOnGetByEmail(){
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
@@ -110,567 +104,359 @@ public class ReadUsuarioServiceTest {
         );
         verify(usuarioRepository, times(1)).findByEmail(anyString());
     }
-
     @Test
-    @DisplayName("Paginacion_Nombre_Apellido & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfAllfUsersByNameOrSurname() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(Nombre-Apellido)")
+    void itShouldToReturnListUserByNameOrSurname()
+            throws BusinessRuleException, ResourceNotFoundException
+    {
         var nombreOApellido = "Rubby";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
 
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllUsersByNameOrSurname(nombreOApellido,pageRequest)).thenReturn(page);
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllUsersByNameOrSurname(nombreOApellido,buildPageRequest())).thenReturn(page);
 
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllUsersByNameOrSurname(
                                 nombreOApellido,
-                                pageNumber,
-                                pageSize,
-                                sortingParams
+                                queryPageable
                         );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("No_Paginacion_Nombre_Apellido & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForUsersFoundByNameOrSurname(){
+    @DisplayName("Lanza_BusinessRuleException:Lista<Usuario>(Nombre:vacio)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForUsersFoundByNameOrSurname()
+            throws BusinessRuleException
+    {
         var nombreOApellido = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
            readUsuarioService.getAllUsersByNameOrSurname(
                    nombreOApellido,
-                   pageNumber,
-                   pageSize,
-                   sortingParams);
+                   queryPageable
+                   );
         });
-        verify(usuarioRepository,never()).findAllUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,never()).findAllUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("NO_Paginacion_Nombre_Apellido & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFoundByNameOrSurname() {
+    @DisplayName("Lanza_ResourceNotFoundException:Lista<Usuario>(Nombre)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFoundByNameOrSurname()
+            throws BusinessRuleException
+    {
         var nombreOApellido ="inexistente";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllUsersByNameOrSurname(
                     nombreOApellido,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,times(1)).findAllUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)Paginacion_NombreApellido & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfActiveUsersByNameOrSurname() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("(Activo)Retorna_ResponseEntity_Body:Lista<Usuario>(Nombre-Apellido)")
+    void itShouldToReturnListOfActiveUsersByNameOrSurname()
+            throws BusinessRuleException, ResourceNotFoundException
+    {
         var nombreOApellido = "Rubby";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
 
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllActiveUsersByNameOrSurname(nombreOApellido,pageRequest)).thenReturn(page);
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllActiveUsersByNameOrSurname(nombreOApellido,buildPageRequest())).thenReturn(page);
 
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllActiveUsersByNameOrSurname(
                         nombreOApellido,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllActiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllActiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)NO_Paginacion_Nombre_Apellido & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForActiveUsersFoundByNameOrSurname(){
+    @DisplayName("(Activo)Lanza_BusinessRuleException:Lista<Usuario>(Nombre:vacio)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForActiveUsersFoundByNameOrSurname()
+            throws BusinessRuleException
+    {
         var nombreOApellido = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
             readUsuarioService.getAllActiveUsersByNameOrSurname(
                     nombreOApellido,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllActiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,never()).findAllActiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)NO_Paginacion_Nombre_Apellido & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoActiveUsersFoundByNameOrSurname() {
+    @DisplayName("(Activo)Lanza_ResourceNotFoundExceptionException:Lista<Usuario>(Nombre)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoActiveUsersFoundByNameOrSurname()
+            throws BusinessRuleException
+    {
         var nombreOApellido ="inexistente";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllActiveUsersByNameOrSurname(
                     nombreOApellido,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,times(1)).findAllActiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllActiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)Paginacion_NombreApellido & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfInactiveUsersByNameOrSurname() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("(Inactivo)Retorna_ResponseEntity_Body:Lista<Usuario>(Nombre-Apellido)")
+    void itShouldToReturnListOfInactiveUsersByNameOrSurname()
+            throws BusinessRuleException, ResourceNotFoundException
+    {
         var nombreOApellido = "Rubby";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllInactiveUsersByNameOrSurname(nombreOApellido,pageRequest)).thenReturn(page);
-
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllInactiveUsersByNameOrSurname(nombreOApellido,buildPageRequest())).thenReturn(page);
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllInactiveUsersByNameOrSurname(
                         nombreOApellido,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllInactiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllInactiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)NO_Paginacion_Nombre_Apellido & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForInactiveUsersFoundByNameOrSurname(){
+    @DisplayName("(Inactivo)Lanza_BusinessRuleException:Lista<Usuario>(Nombre)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForInactiveUsersFoundByNameOrSurname()
+            throws BusinessRuleException{
         var nombreOApellido = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
             readUsuarioService.getAllInactiveUsersByNameOrSurname(
                     nombreOApellido,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+            );
         });
-        verify(usuarioRepository,never()).findAllInactiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,never()).findAllInactiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)NO_Paginacion_Nombre_Apellido & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoInactiveUsersFoundByNameOrSurname() {
+    @DisplayName("(Inactivo)Lanza_ResourceNotFoundExceptionException:Lista<Usuario>(Nombre)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoInactiveUsersFoundByNameOrSurname()
+            throws BusinessRuleException{
         var nombreOApellido ="inexistente";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllInactiveUsersByNameOrSurname(
                     nombreOApellido,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,times(1)).findAllInactiveUsersByNameOrSurname(nombreOApellido,pageRequest);
+        verify(usuarioRepository,times(1)).findAllInactiveUsersByNameOrSurname(nombreOApellido,buildPageRequest());
     }
     @Test
-    @DisplayName("Paginacion_Activo & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfUsersByActive() throws EmptyEntityListException {
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(Activo==true)")
+    void itShouldToReturnListUserByActive()
+            throws EmptyEntityListException,BusinessRuleException
+    {
         var activo = true;
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.searchByActivo(activo,pageRequest)).thenReturn(page);
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.searchByActivo(activo,buildPageRequest())).thenReturn(page);
 
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllUsersByActivo(
                         activo,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).searchByActivo(activo,pageRequest);
+        verify(usuarioRepository,times(1)).searchByActivo(activo,buildPageRequest());
     }
     @Test
-    @DisplayName("NO_Paginacion_Activo & Lanza: EmptyEntityListException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForUsersFoundByActive(){
+    @DisplayName("Lanza_EmptyEntityListException:Lista<Usuario>(Activo)")
+    void itShouldThrowAEmptyEntityListExceptionWhenSearchingForUsersFoundByActive()
+            throws BusinessRuleException{
         var activo = true;
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(EmptyEntityListException.class, () -> {
             readUsuarioService.getAllUsersByActivo(
                     activo,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
         verify(usuarioRepository,times(1))
-                .searchByActivo(activo,pageRequest);
+                .searchByActivo(activo,buildPageRequest());
     }
     @Test
-    @DisplayName("(ALL)Paginacion_Pais & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfUsersByCountry() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(PAIS)")
+    void itShouldToReturnResponseEntityWithUserListByCountry()
+            throws BusinessRuleException, ResourceNotFoundException
+    {
         var pais = "Argentina";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllByCountry(pais,pageRequest)).thenReturn(page);
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllByCountry(pais,buildPageRequest())).thenReturn(page);
 
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllUsersByCountry(
                         pais,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllByCountry(pais,pageRequest);
+        verify(usuarioRepository,times(1)).findAllByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(ALL)NO_Paginacion_Pais & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForUsersFoundByCountry(){
+    @DisplayName("Lanza_BusinessRuleException:Lista<Usuario>(PAIS:vacio)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
             readUsuarioService.getAllUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(ALL)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
-    void itShouldThrowIllegalArgumentExceptionWhenSearchingForUsersFoundByCountry(){
+    @DisplayName("Lanza_IllegalArgumentException:Lista<Usuario>(PAIS:No-Enum)")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais = "xascasfe";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(IllegalArgumentException.class, () -> {
             readUsuarioService.getAllUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                );
         });
-        verify(usuarioRepository,never()).findAllByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(ALL)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFoundByCountry() {
+    @DisplayName("Lanza_ResourceNotFoundException:Lista<Usuario>(PAIS)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais ="Bolivia";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
+
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,times(1)).findAllByCountry(pais,pageRequest);
+        verify(usuarioRepository,times(1)).findAllByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)Paginacion_Pais & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfActiveUsersByCountry() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("Retorna_ResponseEntity_Body:(ACTIVO)Lista<Usuario>(PAIS)")
+    void itShouldToReturnListOfActiveUsersByCountry()
+            throws BusinessRuleException, ResourceNotFoundException
+    {
         var pais = "Argentina";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllActiveUsersByCountry(pais,pageRequest)).thenReturn(page);
-
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllActiveUsersByCountry(pais,buildPageRequest())).thenReturn(page);
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllActiveUsersByCountry(
                         pais,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllActiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,times(1)).findAllActiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)NO_Paginacion_Pais & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForActiveUsersFoundByCountry(){
+    @DisplayName("Lanza_BusinessRuleException:(ACTIVO)Lista<Usuario>(PAIS:vacio)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForActiveUsersFoundByCountry()
+            throws BusinessRuleException
+    {
         var pais = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
             readUsuarioService.getAllActiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
-    void itShouldThrowIllegalArgumentExceptionWhenSearchingForActiveUsersFoundByCountry(){
+    @DisplayName("Lanza_IllegalArgumentException:(ACTIVO)Lista<Usuario>(PAIS:No-Enum)")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForActiveUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais = "xascasfe";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(IllegalArgumentException.class, () -> {
             readUsuarioService.getAllActiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllActiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Activo)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoActiveUsersFoundByCountry() {
+    @DisplayName("Lanza_ResourceNotFoundException:(ACTIVO)Lista<Usuario>(PAIS)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoActiveUsersFoundByCountry()
+            throws BusinessRuleException
+    {
         var pais ="Bolivia";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllActiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,times(1)).findAllActiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,times(1)).findAllActiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)Paginacion_Pais & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfInactiveUsersByCountry() throws BusinessRuleException, ResourceNotFoundException {
+    @DisplayName("Retorna_ResponseEntity_Body:(INACTIVO)Lista<Usuario>(PAIS)")
+    void itShouldToReturnListOfInactiveUsersByCountry()
+            throws BusinessRuleException, ResourceNotFoundException{
         var pais = "Argentina";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
 
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllInactiveUsersByCountry(pais,pageRequest)).thenReturn(page);
+        Page<Usuario>page= buildPage();
+        when(usuarioRepository.findAllInactiveUsersByCountry(pais,buildPageRequest())).thenReturn(page);
 
         ResponseEntity<List<Usuario>> responseEntity=
                 readUsuarioService.getAllInactiveUsersByCountry(
                         pais,
-                        pageNumber,
-                        pageSize,
-                        sortingParams
+                        queryPageable
                 );
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
         assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllInactiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,times(1)).findAllInactiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)NO_Paginacion_Pais & Lanza: BusinessRuleException")
-    void itShouldThrowABusinessRuleExceptionWhenSearchingForInactiveUsersFoundByCountry(){
+    @DisplayName("Lanza_BusinessRuleException:(INACTIVO)Lista<Usuario>(PAIS:vacio)")
+    void itShouldThrowABusinessRuleExceptionWhenSearchingForInactiveUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais = "";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(BusinessRuleException.class, () -> {
             readUsuarioService.getAllInactiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)NO_Paginacion_Pais & Lanza: IllegalArgumentException")
-    void itShouldThrowIllegalArgumentExceptionWhenSearchingForInactiveUsersFoundByCountry(){
+    @DisplayName("Lanza_IllegalArgumentException:(INACTIVO)Lista<Usuario>(PAIS:No-Enum)")
+    void itShouldThrowIllegalArgumentExceptionWhenSearchingForInactiveUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais = "xascasfe";
-        var pageNumber ="1";
-        var pageSize ="10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-
         assertThrows(IllegalArgumentException.class, () -> {
             readUsuarioService.getAllInactiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+                    );
         });
-        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,pageRequest);
+        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(Inactivo)NO_Paginacion_Pais & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoInactiveUsersFoundByCountry() {
+    @DisplayName("Lanza_ResourceNotFoundException:(INACTIVO)Lista<Usuario>(PAIS)")
+    void itShouldThrowAResourceNotFoundExceptionWhenNoInactiveUsersFoundByCountry()
+            throws BusinessRuleException{
         var pais ="Bolivia";
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.pais","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
         assertThrows(ResourceNotFoundException.class, () -> {
             readUsuarioService.getAllInactiveUsersByCountry(
                     pais,
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+                    queryPageable
+            );
         });
-        verify(usuarioRepository,times(1)).findAllInactiveUsersByCountry(pais,pageRequest);
-    }
-    /*@Test
-    @DisplayName("(ALL-ACTIVOS)Paginacion & Retorna: ResponseEntity_OK")
-    void itShouldReturnPaginationOfAllfUsers(){
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        Page<Usuario>page= new PageImpl<>(usuarios,pageRequest,usuarios.size());
-        when(usuarioRepository.findAllAssets(pageRequest)).thenReturn(page);
-
-        ResponseEntity<List<Usuario>> responseEntity=
-                readUsuarioService.getAllUsersToCommonUsers(
-                        pageNumber,
-                        pageSize,
-                        sortingParams
-                );
-        assertNotNull(responseEntity.getBody());
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertFalse(responseEntity.getBody().isEmpty());
-        verify(usuarioRepository,times(1)).findAllAssets(pageRequest);
+        verify(usuarioRepository,times(1)).findAllInactiveUsersByCountry(pais,buildPageRequest());
     }
     @Test
-    @DisplayName("(ALL-ACTIVOS)NO_Paginacion_Activo & Lanza: ResourceNotFoundException")
-    void itShouldThrowAResourceNotFoundExceptionWhenNoUsersFound() {
-        var pageNumber = "1";
-        var pageSize = "10";
-        String[] sortingParams ={"dato.nombre","asc"};
-        PageRequest pageRequest =readUsuarioService.buildPageRequest(
-                pageNumber,
-                pageSize,
-                sortingParams);
-        assertThrows(ResourceNotFoundException.class, () -> {
-            readUsuarioService.getAllUsersToCommonUsers(
-                    pageNumber,
-                    pageSize,
-                    sortingParams);
+    @DisplayName("Lanza_BusinessRuleException:(INACTIVO)Lista<Usuario>(PAIS:numero)")
+    void itShouldThrowBusinessRuleExceptionWhenNoInactiveUsersFoundByCountry()
+            throws BusinessRuleException{
+        var pais ="466";
+        assertThrows(BusinessRuleException.class, () -> {
+            readUsuarioService.getAllInactiveUsersByCountry(
+                    pais,
+                    queryPageable
+            );
         });
-        verify(usuarioRepository,times(1)).findAllAssets(pageRequest);
-    }*/
+        verify(usuarioRepository,never()).findAllInactiveUsersByCountry(pais,buildPageRequest());
+    }
 }

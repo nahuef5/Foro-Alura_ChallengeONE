@@ -22,12 +22,11 @@ public class ModifyUsuarioServiceTest {
     private ModifyUsuarioService modifyUsuarioService;
     private Usuario usuario,user,use,us,u;
     private Long id=1L,id2=2L,id3=3L,id4=4L,id5=5L;
-
     @BeforeEach
     void setUp() {
         DatoPersonal dato=DatoPersonal.builder()
                 .nombre("Rubby")
-                .apellido("Gata")
+                .apellido("Test")
                 .fechaNacimiento(LocalDate.of(2000, 3, 23))
                 .pais("Argentina")
                 .provincia("Cordoba")
@@ -36,35 +35,35 @@ public class ModifyUsuarioServiceTest {
         usuario=Usuario.builder()
                 .id(id)
                 .dato(dato)
-                .email("rubbygata@email.com")
+                .email("rubbytest@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         user=Usuario.builder()
                 .id(id2)
                 .dato(dato)
-                .email("rubbygata2@email.com")
+                .email("rubbytest2@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         use=Usuario.builder()
                 .id(id3)
                 .dato(dato)
-                .email("rubbygata3@email.com")
+                .email("rubbytest3@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         us=Usuario.builder()
                 .id(id4)
                 .dato(dato)
-                .email("rubbygata4@email.com")
+                .email("rubbytest4@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(false)
                 .build();
         u=Usuario.builder()
                 .id(id5)
                 .dato(dato)
-                .email("rubbygata5@email.com")
+                .email("rubbytest5@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(false)
                 .build();
@@ -78,11 +77,11 @@ public class ModifyUsuarioServiceTest {
         u=null;
     }
     @Test
-    @DisplayName("Actualiza Info Personal. Retorna ResponseEntity_OK")
+    @DisplayName("(Actualizar_Dato)Retorna_ResponseEntity_OK")
     void itShouldReturnResponseEntity_StatusOkOnUpdate() throws ResourceNotFoundException {
         UpdateDatoPersonalDTO dto=new UpdateDatoPersonalDTO(
-                "Rubby Verde",
-                "Gata Peque",
+                "Rubby Jr",
+                "Test Prueba",
                 "Córdoba",
                 "Río Ceballos"
         );
@@ -90,14 +89,12 @@ public class ModifyUsuarioServiceTest {
         ResponseEntity<Response> responseEntity=
                 modifyUsuarioService.updateUserByPersonalInformation(id, dto);
         assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.UPDATED,responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository,times(1)).findById(id);
         verify(usuarioRepository,times(1)).saveAndFlush(usuario);
     }
     @Test
-    @DisplayName("No_Actualiza Info Personal. Lanza ResourceNotFoundException")
+    @DisplayName("(Actualizar_Dato)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnUpdate(){
         UpdateDatoPersonalDTO dto=new UpdateDatoPersonalDTO(
                 "Rubby Verde",
@@ -113,7 +110,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).saveAndFlush(any(Usuario.class));
     }
     @Test
-    @DisplayName("Actualiza_Password. Retorna ResponseEntity_OK")
+    @DisplayName("(Actualizar_Password)Retorna_ResponseEntity_OK")
     void itShouldReturnResponseEntity_StatusOkOnGenerateANewPassword() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         var email="rubbygata@email.com";
         NuevaContrasena dto=new NuevaContrasena(
@@ -125,14 +122,12 @@ public class ModifyUsuarioServiceTest {
         ResponseEntity<Response> responseEntity=
                 modifyUsuarioService.generateANewPassword(dto);
         assertEquals(HttpStatus.OK,responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.UPDATED,responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository,times(1)).findByEmail(email);
         verify(usuarioRepository,times(1)).saveAndFlush(usuario);
     }
     @Test
-    @DisplayName("No_Actualiza_Password. Lanza ResourceNotFoundException")
+    @DisplayName("(Actualizar_Password)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnGenerateANewPassword(){
         var email="inexistente@email.com";
         NuevaContrasena dto=new NuevaContrasena(
@@ -148,7 +143,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).saveAndFlush(any(Usuario.class));
     }
     @Test
-    @DisplayName("No_Actualiza_Password. Lanza AccountActivationException")
+    @DisplayName("(Actualizar_Password)Lanza_AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnGenerateANewPassword(){
         usuario.setActivo(false);
         var email="rubbygata@email.com";
@@ -165,7 +160,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).saveAndFlush(usuario);
     }
     @Test
-    @DisplayName("No_Actualiza_Password. Lanza BusinessRuleException")
+    @DisplayName("(Actualizar_Password)Lanza_BusinessRuleException(PASSWORD)")
     void itShouldThrowBusinessRuleExceptionOnGenerateANewPassword(){
         var email="rubbygata@email.com";
         NuevaContrasena dto=new NuevaContrasena(
@@ -181,22 +176,19 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).saveAndFlush(usuario);
     }
     @Test
-    @DisplayName("Desactiva & Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDisable() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
+    @DisplayName("(Desactivar)Retorna_ResponseEntity_Accepted")
+    void itShouldReturnResponseEntity_StatusAcceptedOnDisable()throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
         doNothing().when(usuarioRepository).setInactiveToUser(id);
         ResponseEntity<Response> responseEntity=modifyUsuarioService.disableAccount(dto);
-
-        assertNotNull(responseEntity.getBody());
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository, times(1)).findById(id);
         verify(usuarioRepository,times(1)).setInactiveToUser(id);
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza ResourceNotFoundException")
+    @DisplayName("(Desactivar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDeleteFromDDBB(){
         Long _id=9L;
         RemoveUsuarioDto dto=new RemoveUsuarioDto(_id,true);
@@ -208,7 +200,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUser(_id);
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza BusinessRuleException")
+    @DisplayName("(Desactivar)Lanza_BusinessRuleException(No-Confirmado)")
     void itShouldThrowBusinessRuleExceptionOnDeleteFromDDBB(){
         Long _id=9L;
         RemoveUsuarioDto dto=new RemoveUsuarioDto(_id,false);
@@ -221,12 +213,11 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUser(_id);
     }
     @Test
-    @DisplayName("No_Desactiva. Lanza AccountActivationException")
+    @DisplayName("(Desactivar)Lanza_AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnDeleteFromDDBB(){
         usuario.setActivo(false);
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
-
         assertThrows(AccountActivationException.class,
                 ()->modifyUsuarioService.disableAccount(dto)
         );
@@ -234,32 +225,25 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUser(id);
     }
     @Test
-    @DisplayName("Desactiva_Lista. Retorna ResponseEntity_Accepted")
-    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB() throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
+    @DisplayName("(Desactivar_Lista)Retorna_ResponseEntity_Accepted")
+    void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB()throws BusinessRuleException, ResourceNotFoundException, AccountActivationException {
         List<Long>ids=Arrays.asList(id,id2);
         List<Usuario>users=Arrays.asList(usuario,user);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(users);
         doNothing().when(usuarioRepository).setInactiveToUserList(users);
-
         ResponseEntity<Response> responseEntity=modifyUsuarioService.disableAccounts(dto);
-
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository, times(3)).findAllById(ids);
         verify(usuarioRepository,times(1)).setInactiveToUserList(users);
     }
     @Test
-    @DisplayName("No_Desactiva_Lista. Lanza ResourceNotFoundException")
+    @DisplayName("(Desactivar_Lista)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(8L,9L);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(anyList());
-
         assertThrows(ResourceNotFoundException.class,
                 ()->modifyUsuarioService.disableAccounts(dto)
         );
@@ -267,7 +251,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUserList(anyList());
     }
     @Test
-    @DisplayName("Desactiva_Lista. Lanza BusinessRuleException")
+    @DisplayName("(Desactivar_Lista)Lanza_BusinessRuleException")
     void itShouldThrowBusinessRuleExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(id,id2);
         List<Usuario>users=Arrays.asList(usuario,user);
@@ -281,14 +265,12 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUserList(users);
     }
     @Test
-    @DisplayName("No_Desactiva_Lista. Lanza AccountActivationException")
+    @DisplayName("(Desactivar_Lista)Lanza_AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(id4,id5);
         List<Usuario>users=Arrays.asList(us,u);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(users);
-
         assertThrows(AccountActivationException.class,
                 ()->modifyUsuarioService.disableAccounts(dto)
         );
@@ -296,7 +278,7 @@ public class ModifyUsuarioServiceTest {
         verify(usuarioRepository,never()).setInactiveToUserList(users);
     }
     @Test
-    @DisplayName("Reactiva & Retorna ResponseEntity_Accepted")
+    @DisplayName("(Reactivar)Retorna_ResponseEntity_Accepted")
     void itShouldResponseEntity_StatusAcceptedOnReactivate() throws ResourceNotFoundException, AccountActivationException {
         var email="rubbygata@email.com";
         usuario.setActivo(false);
@@ -316,28 +298,22 @@ public class ModifyUsuarioServiceTest {
                 .saveAndFlush(usuario);
     }
     @Test
-    @DisplayName("No_Reactiva. Lanza ResourceNotFoundException")
+    @DisplayName("(Reactivar)Lanza_ResourceNotFoundException")
     void itShouldThrowResourceNotFoundExceptionOnActivate(){
-
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class,
                 ()->modifyUsuarioService.reactivateAccountByEmail(anyString())
         );
-
         verify(usuarioRepository, times(1)).findByEmail(anyString());
         verify(usuarioRepository,never()).saveAndFlush(any(Usuario.class));
     }
     @Test
-    @DisplayName("No_Reactiva. Lanza AccountActivationException")
+    @DisplayName("(Reactivar)Lanza_AccountActivationException")
     void itShouldThrowAccountActivationExceptionOnActivate(){
-        //Arrange
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.of(usuario));
-        //Act and assert
         assertThrows(AccountActivationException.class,
                 ()->modifyUsuarioService.reactivateAccountByEmail(anyString())
         );
-        //Verifications
         verify(usuarioRepository,times(1)).findByEmail(anyString());
         verify(usuarioRepository,never()).saveAndFlush(any(Usuario.class));
     }

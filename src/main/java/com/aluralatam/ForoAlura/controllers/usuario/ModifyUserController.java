@@ -1,4 +1,4 @@
-package com.aluralatam.ForoAlura.controller.usuarioControllers;
+package com.aluralatam.ForoAlura.controllers.usuario;
 import com.aluralatam.ForoAlura.domain.usuario.model.dto.*;
 import com.aluralatam.ForoAlura.domain.usuario.services.modifications.ModifyUsuarioService;
 import com.aluralatam.ForoAlura.global.exceptions.AccountActivationException;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/usuario")
 @RequiredArgsConstructor
-public class ModifyUsuarioController{
+public class ModifyUserController {
     private final ModifyUsuarioService service;
     @PutMapping("/update-data/{id}")
     public ResponseEntity<Response> updateByPersonalInformation(

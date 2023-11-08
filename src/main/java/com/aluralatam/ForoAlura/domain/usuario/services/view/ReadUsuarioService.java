@@ -1,6 +1,5 @@
 package com.aluralatam.ForoAlura.domain.usuario.services.view;
 import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
-import com.aluralatam.ForoAlura.domain.usuario.model.utils.Countries;
 import com.aluralatam.ForoAlura.domain.usuario.services.repository.UsuarioRepository;
 import com.aluralatam.ForoAlura.global.exceptions.*;
 import com.aluralatam.ForoAlura.global.tools.*;
@@ -17,30 +16,8 @@ public class ReadUsuarioService{
     private final UsuarioRepository usuarioRepository;
     private final String notFoundByID = Message.NO_ID_EXISTS;
     private final String badParameter =Message.NO_PARAMETER_EXIST;
-    private final String emptyField=Message.EMPTY_FIELD;
-    public boolean isCountry(String pais){
-        try{
-            var replace=pais.toUpperCase().replace(" ","_");
-            Countries.valueOf(replace);
-            return true;
-        }catch(IllegalArgumentException e){
-            return false;
-        }
-    }
-    public PageRequest buildPageRequest(String pageNumber, String pageSize, String[] sortingParams) {
-        try {
-            var pagNum = Integer.parseInt(pageNumber);
-            var pagTam = Integer.parseInt(pageSize);
-            if (pagNum < 1 || pagTam < 1)
-                throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
-            String field = sortingParams[0];
-            String sortingDirection = sortingParams[1];
-            Sort.Direction direction = sortingDirection.equals("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-            return PageRequest.of(pagNum -1,pagTam, Sort.by(direction,field));
-        }catch(IllegalArgumentException e){
-            throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
-        }
-    }
+    private final String errorMessage ="Error de validacion: ";
+
     @Transactional(readOnly=true)
     public ResponseEntity<Usuario> getUserById(Long id) throws ResourceNotFoundException {
         Usuario usuario=usuarioRepository.findById(id).orElseThrow(
@@ -59,13 +36,12 @@ public class ReadUsuarioService{
     @Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>>getAllUsersByNameOrSurname(
             String nombreOApellido,
-            String pageNumber,
-            String pageSize,
-            String[] sortingParams
+            QueryPageable queryPageable
     ) throws ResourceNotFoundException, BusinessRuleException {
-        if(nombreOApellido.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        var isInvalidText = ChainChecker.invalidText(nombreOApellido);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllUsersByNameOrSurname(nombreOApellido,pageRequest);
 
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
@@ -77,16 +53,14 @@ public class ReadUsuarioService{
     public ResponseEntity<List<Usuario>>
         getAllActiveUsersByNameOrSurname(
             String nombreOApellido,
-            String pageNumber,
-            String pageSize,
-            String[] sortingParams
+            QueryPageable queryPageable
     ) throws ResourceNotFoundException, BusinessRuleException {
-        if(nombreOApellido.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        var isInvalidText = ChainChecker.invalidText(nombreOApellido);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository
                 .findAllActiveUsersByNameOrSurname(nombreOApellido,pageRequest);
-
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
         if(usuarios.isEmpty())
             throw new ResourceNotFoundException(Message.EMPTY_LIST);
@@ -96,13 +70,12 @@ public class ReadUsuarioService{
     public ResponseEntity<List<Usuario>>
         getAllInactiveUsersByNameOrSurname(
             String nombreOApellido,
-            String pageNumber,
-            String pageSize,
-            String[] sortingParams
+            QueryPageable queryPageable
     ) throws ResourceNotFoundException, BusinessRuleException {
-        if(nombreOApellido.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        var isInvalidText = ChainChecker.invalidText(nombreOApellido);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository
                 .findAllInactiveUsersByNameOrSurname(nombreOApellido,pageRequest);
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
@@ -112,14 +85,13 @@ public class ReadUsuarioService{
     }
     @Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>>
-        getAllUsersByActivo(@NotNull boolean activo,
-                        String pageNumber,
-                        String pageSize,
-                        String[] sortingParams
-    ) throws EmptyEntityListException {
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        getAllUsersByActivo(
+                @NotNull boolean activo,
+                QueryPageable queryPageable
+    ) throws EmptyEntityListException, BusinessRuleException
+    {
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository.searchByActivo(activo,pageRequest);
-
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
         if(usuarios.isEmpty())
             throw new EmptyEntityListException(Message.EMPTY_LIST);
@@ -127,17 +99,16 @@ public class ReadUsuarioService{
     }
     @Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>>
-        getAllUsersByCountry(String pais,
-                         String pageNumber,
-                         String pageSize,
-                         String[] sortingParams
+        getAllUsersByCountry(
+                String pais,
+                QueryPageable queryPageable
     ) throws ResourceNotFoundException, BusinessRuleException {
-        if(pais.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        if(!isCountry(pais))
+        var isInvalidText = ChainChecker.invalidText(pais);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        if(!ChainChecker.isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
-
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllByCountry(pais,pageRequest);
 
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
@@ -147,16 +118,16 @@ public class ReadUsuarioService{
     }
     @Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>>
-        getAllActiveUsersByCountry(String pais,
-                               String pageNumber,
-                               String pageSize,
-                               String[] sortingParams
+        getAllActiveUsersByCountry(
+                String pais,
+                QueryPageable queryPageable
     ) throws ResourceNotFoundException, BusinessRuleException {
-        if(pais.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        if(!isCountry(pais))
+        var isInvalidText = ChainChecker.invalidText(pais);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        if(!ChainChecker.isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllActiveUsersByCountry(pais,pageRequest);
 
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
@@ -166,16 +137,16 @@ public class ReadUsuarioService{
     }
     @Transactional(readOnly=true)
     public ResponseEntity<List<Usuario>>
-        getAllInactiveUsersByCountry(String pais,
-                                 String pageNumber,
-                                 String pageSize,
-                                 String[] sortingParams
-    ) throws ResourceNotFoundException, BusinessRuleException {
-        if(pais.isEmpty())
-            throw new BusinessRuleException(emptyField);
-        if(!isCountry(pais))
+        getAllInactiveUsersByCountry(
+                String pais,
+                QueryPageable queryPageable
+    )throws ResourceNotFoundException, BusinessRuleException {
+        var isInvalidText = ChainChecker.invalidText(pais);
+        if(isInvalidText != null)
+            throw new BusinessRuleException(errorMessage+ isInvalidText);
+        if(!ChainChecker.isCountry(pais))
             throw new IllegalArgumentException("NO SE ENCUENTRA ESE PAIS EN NUESTRA LISTA.");
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
+        PageRequest pageRequest=PageRequestConstructor.buildPageRequest(queryPageable);
         Page<Usuario>listaUsuarios=usuarioRepository.findAllInactiveUsersByCountry(pais,pageRequest);
 
         List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
@@ -183,18 +154,4 @@ public class ReadUsuarioService{
             throw new ResourceNotFoundException(Message.EMPTY_LIST);
         return ResponseEntity.status(HttpStatus.OK).body(usuarios);
     }
-    /*@Transactional(readOnly=true)
-    public ResponseEntity<List<Usuario>> getAllUsersToCommonUsers(
-                String pageNumber,
-                String pageSize,
-                String[] sortingParams
-    )
-    {
-        PageRequest pageRequest=buildPageRequest(pageNumber, pageSize, sortingParams);
-        Page<Usuario>listaUsuarios=usuarioRepository.findAllAssets(pageRequest);
-        List<Usuario>usuarios=listaUsuarios != null ? listaUsuarios.getContent() : new ArrayList<>();
-        if(usuarios.isEmpty())
-            throw new ResourceNotFoundException(Message.EMPTY_LIST);
-        return ResponseEntity.status(HttpStatus.OK).body(usuarios);
-    }*/
 }

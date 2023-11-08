@@ -27,7 +27,7 @@ public class DeleteUsuarioServiceTest {
     void setUp() {
         DatoPersonal dato=DatoPersonal.builder()
                 .nombre("Rubby")
-                .apellido("Gata")
+                .apellido("Test")
                 .fechaNacimiento(LocalDate.of(2000, 3, 23))
                 .pais("Argentina")
                 .provincia("Cordoba")
@@ -36,40 +36,39 @@ public class DeleteUsuarioServiceTest {
         usuario=Usuario.builder()
                 .id(id)
                 .dato(dato)
-                .email("rubbygata@email.com")
+                .email("rubbytest@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         user=Usuario.builder()
                 .id(id2)
                 .dato(dato)
-                .email("rubbygata2@email.com")
+                .email("rubbytest2@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         use=Usuario.builder()
                 .id(id3)
                 .dato(dato)
-                .email("rubbygata3@email.com")
+                .email("rubbytest3@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(true)
                 .build();
         us=Usuario.builder()
                 .id(id4)
                 .dato(dato)
-                .email("rubbygata4@email.com")
+                .email("rubbytest4@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(false)
                 .build();
         u=Usuario.builder()
                 .id(id5)
                 .dato(dato)
-                .email("rubbygata5@email.com")
+                .email("rubbytest5@email.com")
                 .contrasena("Abcdef_12345")
                 .activo(false)
                 .build();
     }
-
     @AfterEach
     void tearDown() {
         usuario=null;
@@ -78,24 +77,21 @@ public class DeleteUsuarioServiceTest {
         us=null;
         u=null;
     }
-
     @Test
-    @DisplayName("Elimina & Retorna ResponseEntity_Accepted")
+    @DisplayName("(Eliminar)Retorna_ResponseEntity_Accepted")
     void itShouldReturnResponseEntity_StatusAcceptedOnDeleteFromDDBB() throws ResourceNotFoundException, BusinessRuleException, AccountActivationException {
         usuario.setActivo(false);
         RemoveUsuarioDto dto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
-        ResponseEntity<Response> responseEntity=deleteUsuarioService.deleteUserFromDDBB(dto);
-
+        ResponseEntity<Response> responseEntity=
+                deleteUsuarioService.deleteUserFromDDBB(dto);
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository, times(1)).findById(id);
         verify(usuarioRepository,times(1)).delete(usuario);
     }
     @Test
-    @DisplayName("No_Elimina. Lanza ResourceNotFoundException")
+    @DisplayName("(Eliminar)Lanza_ResourceNotFoundException(ID)")
     void itShouldThrowResourceNotFoundExceptionOnDeleteFromDDBB(){
         RemoveUsuarioDto deleteDto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(anyLong())).thenReturn(Optional.empty());
@@ -106,7 +102,7 @@ public class DeleteUsuarioServiceTest {
         verify(usuarioRepository,never()).delete(usuario);
     }
     @Test
-    @DisplayName("No_Elimina. Lanza AccountActivationException")
+    @DisplayName("(Eliminar)Lanza_AccountActivationException(Activo==true)")
     void itShouldThrowAccountActivationExceptionOnDeleteFromDDBB(){
         RemoveUsuarioDto deleteDto=new RemoveUsuarioDto(id,true);
         when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
@@ -118,7 +114,7 @@ public class DeleteUsuarioServiceTest {
         verify(usuarioRepository,never()).delete(usuario);
     }
     @Test
-    @DisplayName("No_Elimina. Lanza BusinessRuleException")
+    @DisplayName("(Eliminar)Lanza_BusinessRuleException(No-Confirmado)")
     void itShouldThrowBusinessRuleExceptionOnDeleteFromDDBB(){
         usuario.setActivo(false);
         RemoveUsuarioDto deleteDto=new RemoveUsuarioDto(id,false);
@@ -130,34 +126,27 @@ public class DeleteUsuarioServiceTest {
         verify(usuarioRepository, times(1)).findById(id);
         verify(usuarioRepository,never()).delete(usuario);
     }
-
     @Test
-    @DisplayName("Elimina_Lista. Retorna ResponseEntity_Accepted")
+    @DisplayName("(Eliminar_Lista)Retorna_ResponseEntity_Accepted")
     void itShouldReturnResponseEntity_StatusAcceptedOnDeleteUsersFromDDBB() throws BusinessRuleException, AccountActivationException, ResourceNotFoundException {
         List<Long>ids=Arrays.asList(id4,id5);
         List<Usuario>users=Arrays.asList(us,u);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(users);
         doNothing().when(usuarioRepository).deleteAllByIdInBatch(ids);
-
-        ResponseEntity<Response> responseEntity=deleteUsuarioService.deleteUsersFromDDBB(dto);
-
+        ResponseEntity<Response> responseEntity=
+                deleteUsuarioService.deleteUsersFromDDBB(dto);
         assertEquals(HttpStatus.ACCEPTED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.ELIMINATED, responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository, times(2)).findAllById(ids);
         verify(usuarioRepository,times(1)).deleteAllByIdInBatch(ids);
     }
     @Test
-    @DisplayName("No_Elimina_Lista. Lanza ResourceNotFoundException")
+    @DisplayName("(Eliminar_Lista)Lanza_ResourceNotFoundException(Lista<IDS>)")
     void itShouldThrowResourceNotFoundExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(8L,9L);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(anyList());
-
         assertThrows(ResourceNotFoundException.class,
                 ()->deleteUsuarioService.deleteUsersFromDDBB(dto)
         );
@@ -165,12 +154,11 @@ public class DeleteUsuarioServiceTest {
         verify(usuarioRepository,never()).deleteAllByIdInBatch(ids);
     }
     @Test
-    @DisplayName("No_Elimina_Lista. Lanza AccountActivationException")
+    @DisplayName("(Eliminar_Lista)Lanza_AccountActivationException(Activo==TRUE)")
     void itShouldThrowAccountActivationExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(id,id2);
         List<Usuario>users=Arrays.asList(usuario,user);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,true);
-
         when(usuarioRepository.findAllById(ids)).thenReturn(users);
         assertThrows(AccountActivationException.class,
                 ()->deleteUsuarioService.deleteUsersFromDDBB(dto)
@@ -179,13 +167,12 @@ public class DeleteUsuarioServiceTest {
         verify(usuarioRepository,never()).deleteAllByIdInBatch(ids);
     }
     @Test
-    @DisplayName("No_Elimina_Lista. Lanza BusinessRuleException")
+    @DisplayName("(Eliminar_Lista)Lanza_BusinessRuleException(No-Confirmado)")
     void itShouldThrowBusinessRuleExceptionOnDeleteUsersFromDDBB(){
         List<Long>ids=Arrays.asList(id4,id5);
         List<Usuario>users=Arrays.asList(us,u);
         RemoveListaUsuariosDto dto=new RemoveListaUsuariosDto(ids,false);
         when(usuarioRepository.findAllById(ids)).thenReturn(users);
-
         assertThrows(BusinessRuleException.class,
                 ()->deleteUsuarioService.deleteUsersFromDDBB(dto)
         );

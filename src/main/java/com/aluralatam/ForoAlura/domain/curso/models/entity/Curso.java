@@ -1,10 +1,15 @@
 package com.aluralatam.ForoAlura.domain.curso.models.entity;
 import com.aluralatam.ForoAlura.domain.curso.models.dtos.CUCursoDto;
+import com.aluralatam.ForoAlura.domain.topico.model.entity.Topico;
+import com.aluralatam.ForoAlura.domain.usuario.model.entity.Usuario;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.*;
 @Data
 @Builder
 @NoArgsConstructor
+@EqualsAndHashCode(of = "id")
 @AllArgsConstructor
 @Entity(name="Curso")
 @Table(name="cursos")
@@ -15,7 +20,21 @@ public class Curso{
     private String nombre;
     private String categoria;
     private boolean inactivo;
-
+    @ManyToMany
+    @JoinTable(
+            name= "usuario_curso",
+            joinColumns =@JoinColumn(name="curso_id"),
+            inverseJoinColumns =@JoinColumn(name="usuario_id")
+    )
+    @JsonIgnore
+    private List<Usuario> usuarios = new ArrayList<>();
+    @OneToMany(
+            mappedBy ="curso",
+            fetch=FetchType.LAZY,
+            cascade = CascadeType.REMOVE
+    )
+    @JsonIgnore
+    private List<Topico> topicos=new ArrayList<>();
     public Curso(CUCursoDto dto) {
         this.nombre = dto.nombre();
         this.categoria = dto.categoria();
@@ -25,32 +44,16 @@ public class Curso{
         this.nombre=nombre;
         this.categoria=categoria;
     }
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        return result;
+    public boolean addUsuarioToList(Usuario usuario){
+        return usuarios.add(usuario);
     }
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        Curso other = (Curso) obj;
-        if (id == null) {
-            if (other.id != null) {
-                return false;
-            }
-        } else if (!id.equals(other.id)) {
-            return false;
-        }
-        return true;
+    public boolean addTopicoToList(Topico topico){
+        return topicos.add(topico);
+    }
+    public boolean removeUsuarioFromList(Usuario usuario){
+        return usuarios.remove(usuario);
+    }
+    public boolean removeTopicoFromList(Topico topico){
+        return usuarios.remove(topico);
     }
 }

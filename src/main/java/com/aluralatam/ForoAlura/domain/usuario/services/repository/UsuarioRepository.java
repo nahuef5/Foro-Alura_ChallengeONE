@@ -36,7 +36,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long>{
             +"WHERE u.dato.apellido=:apellido"
     )
     boolean existsByApellido(@Param("apellido") String apellido);
-
     /**
     * Setea la activación a false a un usuario
     *
@@ -63,7 +62,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long>{
                     + "WHERE u IN ?1"
     )
     void setInactiveToUserList(List<Usuario> listaUsuarios);
-
     /**
     * Busca usuarios activos por nombre o apellido.
     *
@@ -79,7 +77,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long>{
     )
     Page<Usuario> findAllActiveUsersByNameOrSurname(
             @Param("nombreOApellido") String nombreOApellido, Pageable pageable);
-
     /**
      * Busca usuarios por nombre o apellido
      *
@@ -167,14 +164,22 @@ public interface UsuarioRepository extends JpaRepository<Usuario,Long>{
     )
     Page<Usuario>searchByActivo(boolean activo, Pageable pageable);
     /**
-    * Busca usuarios activos
-    *
-    * @param pageable  proporciona información de la paginación
-    * @return una página de usuarios activos
-    */
-    @Query(value =
-            "SELECT u FROM Usuario u "
-            +"WHERE u.activo= true"
+     * Query para obtener usuarios.
+     * Cada array contiene los campos seleccionados en orden:
+     * nombre, apellido, fecha de nacimiento, país, provincia, localidad y email.
+     *
+     * @return List<Object[]> lista de arrays de obj,
+     * cada array contiene los campos indicados.
+     */
+    @Query(value=
+            "SELECT u.dato.nombre, " +
+                    "u.dato.apellido, " +
+                    "u.dato.fechaNacimiento, " +
+                    "u.dato.pais, " +
+                    "u.dato.provincia, " +
+                    "u.dato.localidad, " +
+                    "u.email " +
+                    "FROM Usuario u"
     )
-    Page<Usuario>findAllAssets(Pageable pageable);
+    List<Object[]> findAllUsers();
 }

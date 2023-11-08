@@ -20,11 +20,11 @@ public class CreateUsuarioServiceTest{
     @InjectMocks
     private CreateUsuarioService createUsuarioService;
     @Test
-    @DisplayName("Guarda & Retorna ResponseEntity_Created")
+    @DisplayName("(Registrar)Retorna_ResponseEntity_Created")
     void itShouldReturnResponseEntity_StatusCreatedOnSave() throws BusinessRuleException, EntityAlreadyExistsException {
         CreateDatoPersonalDTO datoDTO=new CreateDatoPersonalDTO(
                 "Rubby",
-                "Gata",
+                "Test",
                 LocalDate.of(2000,3,23),
                 "Argentina",
                 "Cordoba",
@@ -32,7 +32,7 @@ public class CreateUsuarioServiceTest{
         );
         CreateUsuarioDTO dto=new CreateUsuarioDTO(
                 datoDTO,
-                "rubbygata@email.com",
+                "rubbytest@email.com",
                 "Abcdef_12345",
                 "Abcdef_12345"
         );
@@ -44,23 +44,19 @@ public class CreateUsuarioServiceTest{
         );
         ResponseEntity<Response> responseEntity=createUsuarioService
                 .registerNewCommonUser(dto);
-
         assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertNotNull(responseEntity.getBody());
         assertEquals(Message.CREATED,responseEntity.getBody().getRespuesta());
-
         verify(usuarioRepository, times(1))
                 .existsByEmail(dto.email());
         verify(usuarioRepository, times(1))
                 .saveAndFlush(any(Usuario.class));
     }
     @Test
-    @DisplayName("No_Guarda. Lanza EntityAlreadyExistsException")
+    @DisplayName("(Registrar)Lanza_EntityAlreadyExistsException(EMAIL)")
     void itShouldThrowEntityAlreadyExistsExceptionOnSave(){
-
         CreateDatoPersonalDTO datoDTO=new CreateDatoPersonalDTO(
                 "Rubby",
-                "Gata",
+                "Test",
                 LocalDate.of(2000,3,23),
                 "Argentina",
                 "Cordoba",
@@ -68,28 +64,26 @@ public class CreateUsuarioServiceTest{
         );
         CreateUsuarioDTO dto=new CreateUsuarioDTO(
                 datoDTO,
-                "rubbygata@email.com",
+                "rubbytest@email.com",
                 "Abcdef_12345",
                 "Abcdef_12345"
         );
         when(usuarioRepository.existsByEmail(
                 anyString())).thenReturn(true);
-
         assertThrows(EntityAlreadyExistsException.class,
                 ()->createUsuarioService.registerNewCommonUser(dto)
         );
-
         verify(usuarioRepository,times(1))
                 .existsByEmail(dto.email());
         verify(usuarioRepository,never())
                 .saveAndFlush(any(Usuario.class));
     }
     @Test
-    @DisplayName("No_Guarda. Lanza EntityAlreadyExistsException")
+    @DisplayName("(Registrar)Lanza_BusinessRuleException(Password)")
     void itShouldThrowBusinessRuleExceptionOnSave(){
         CreateDatoPersonalDTO datoDTO=new CreateDatoPersonalDTO(
                 "Rubby",
-                "Gata",
+                "Test",
                 LocalDate.of(2000,3,23),
                 "Argentina",
                 "Cordoba",
@@ -97,9 +91,34 @@ public class CreateUsuarioServiceTest{
         );
         CreateUsuarioDTO dto=new CreateUsuarioDTO(
                 datoDTO,
-                "rubbygata@email.com",
+                "rubbytest@email.com",
                 "Abcdef_12345",
-                "Acdef_2345"
+                "Testt_2345"
+        );
+        assertThrows(BusinessRuleException.class,
+                ()->createUsuarioService.registerNewCommonUser(dto)
+        );
+        verify(usuarioRepository,never())
+                .existsByEmail(dto.email());
+        verify(usuarioRepository,never())
+                .saveAndFlush(any(Usuario.class));
+    }
+    @Test
+    @DisplayName("(Registrar)Lanza_BusinessRuleException(PAIS)")
+    void itShouldThrowBusinessRuleExceptionOnSaveXCountry(){
+        CreateDatoPersonalDTO datoDTO=new CreateDatoPersonalDTO(
+                "Rubby",
+                "Test",
+                LocalDate.of(2000,3,23),
+                "India",
+                "Cordoba",
+                "Rio Ceballos"
+        );
+        CreateUsuarioDTO dto=new CreateUsuarioDTO(
+                datoDTO,
+                "rubbytest@email.com",
+                "Abcdef_12345",
+                "Abcdef_12345"
         );
         assertThrows(BusinessRuleException.class,
                 ()->createUsuarioService.registerNewCommonUser(dto)

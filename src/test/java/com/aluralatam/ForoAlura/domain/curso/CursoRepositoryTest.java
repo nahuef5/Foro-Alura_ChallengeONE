@@ -32,6 +32,7 @@ public class CursoRepositoryTest{
         cursoRepository.deleteAll();
     }
     @Test
+    @DisplayName("Existe_Curso(Nombre-Categoria))")
     void itShouldCheckIfCoursesExistByNameAndCategory(){
         var nombre="Java";
         var categoria="Star-A1";
@@ -40,7 +41,7 @@ public class CursoRepositoryTest{
         assertThat(expected).isTrue();
     }
     @Test
-    @DisplayName("Prueba que verifica que no existe un curso con ese nombre y categoria")
+    @DisplayName("No_Existe_Curso(Nombre-Categoria))")
     void itShouldCheckThatCoursesDoNotExistByNameAndCategory(){
         var nombre="nombreTest";
         var categoria="categoriaTest";
@@ -48,6 +49,7 @@ public class CursoRepositoryTest{
         assertThat(expected).isFalse();
     }
     @Test
+    @DisplayName("Existe_Curso(Nombre)")
     void itShoulCheckIfCourseExistsByName(){
         var nombre="Java";
         cursoRepository.save(curso);
@@ -55,13 +57,15 @@ public class CursoRepositoryTest{
         assertThat(expected).isTrue();
     }
     @Test
+    @DisplayName("No_Existe_Curso(Nombre))")
     void itShouldCheckThatCourseDoesntExistsByName(){
         var nombre="nombreTest";
         boolean expected= cursoRepository.existsByNombre(nombre);
         assertThat(expected).isFalse();
     }
     @Test
-    void itShouldFindCoursesByName() {
+    @DisplayName("Retorna_Page<Curso>(Nombre))")
+    void itShouldFindCoursesByName(){
         String nombreCurso = "Java";
         cursoRepository.save(curso);
         Pageable pageable = PageRequest.of(0, 3);
@@ -72,6 +76,7 @@ public class CursoRepositoryTest{
                         .contains(nombreCurso)));
     }
     @Test
+    @DisplayName("Retorna_Page<Curso>_Vacia(Nombre))")
     void itShouldCheckThatNoCoursesAreFoundByName() {
         var nombre="nombre";
         cursoRepository.save(curso);

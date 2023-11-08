@@ -17,13 +17,14 @@ import org.springframework.util.StringUtils;
 import java.time.*;
 import java.util.*;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
 @AutoConfigureMockMvc
-public class CreateControllerTest{
+public class CreateUserControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -49,7 +50,7 @@ public class CreateControllerTest{
         return pais;
     }
     @Test
-    @DisplayName("Registra Usuario+HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response_Created")
     public void itShouldBeAbleToRegisterANewUserAndReturnResponseEntity()throws Exception{
         var names=String.format("%s %s", FAKER.name().firstName(),FAKER.name().firstName());
         var lastnames=String.format("%s %s", FAKER.name().lastName(),FAKER.name().lastName());
@@ -86,8 +87,18 @@ public class CreateControllerTest{
                 .andDo(print())
                 .andReturn();
 
-        List<Usuario> usuarioList=repository.findAll();
-        assertThat(usuarioList).usingElementComparatorIgnoringFields("id")
-                .contains(usuario);
+        List<Object[]> usuarioList=repository.findAllUsers();
+        Object[]newUser={
+                usuario.getDato().getNombre(),
+                usuario.getDato().getApellido(),
+                usuario.getDato().getFechaNacimiento(),
+                usuario.getDato().getPais(),
+                usuario.getDato().getProvincia(),
+                usuario.getDato().getLocalidad(),
+                usuario.getEmail()
+        };
+        var lastElement=usuarioList.get(usuarioList.size()-1);
+
+        assertTrue(Arrays.equals(lastElement, newUser));
     }
 }

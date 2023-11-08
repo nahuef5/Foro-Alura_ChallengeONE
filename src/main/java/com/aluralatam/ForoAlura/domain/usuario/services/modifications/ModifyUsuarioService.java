@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
-public class ModifyUsuarioService{
+public class ModifyUsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final Response responseOK = Response.builder()
             .httpStatus(HttpStatus.OK)

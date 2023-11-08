@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 @Service
 public class CursoServiceImpl implements CursoService {
     private final CursoRepository cursoRepository;
-
     @Transactional(rollbackFor = EntityAlreadyExistsException.class)
     @Override
     public ResponseEntity<Response> save(CUCursoDto dto) throws EntityAlreadyExistsException {
@@ -70,8 +69,9 @@ public class CursoServiceImpl implements CursoService {
             throw new BusinessRuleException(Message.NOT_CONFIRMED);
         curso.setInactivo(true);
         cursoRepository.save(curso);
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
+        ResponseEntity<Response> body=ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(new Response(HttpStatus.ACCEPTED, Message.ELIMINATED));
+        return body;
     }
     @Transactional(rollbackFor = AccountActivationException.class)
     @Override
@@ -95,56 +95,54 @@ public class CursoServiceImpl implements CursoService {
     }
     @Transactional(readOnly=true)
     @Override
-    public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria) throws ResourceNotFoundException {
+    public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria) throws ResourceNotFoundException, BusinessRuleException {
+        var isInvalidName = ChainChecker.invalidText(nombre);
+        var isInvalidCategory = ChainChecker.invalidText(categoria);
+        if(isInvalidName != null)
+            throw new BusinessRuleException("Nombre: "+ isInvalidName);
+        if(isInvalidCategory != null)
+            throw new BusinessRuleException("Categoria: "+ isInvalidCategory);
         Curso curso=cursoRepository.findByNombreAndCategoria(nombre, categoria).orElseThrow(
                 ()->new ResourceNotFoundException(Message.NO_PARAMETER_EXIST));
         return ResponseEntity.status(HttpStatus.FOUND).body(curso);
     }
     @Transactional(readOnly=true)
     @Override
-    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(String nombre,String pageNumber,String pageSize) throws ResourceNotFoundException {
-        var numPag=Integer.parseInt(pageNumber);
-        var tamPag=Integer.parseInt(pageSize);
-        if (numPag < 1 || tamPag < 1){
-            throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
-        }
-        else if(!cursoRepository.existsByNombre(nombre)){
+    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(
+            String nombre,
+            QueryPageable queryPageable
+    )throws ResourceNotFoundException, BusinessRuleException {
+        var isInvalidName = ChainChecker.invalidText(nombre);
+        if(isInvalidName != null)
+            throw new BusinessRuleException("Nombre "+ isInvalidName);
+        PageRequest pageRequest = PageRequestConstructor.buildPageRequest(queryPageable);
+        if(!cursoRepository.existsByNombre(nombre))
             throw new ResourceNotFoundException(Message.NO_PARAMETER_EXIST);
-        }
-        else{
-            PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
-            Page<Curso> cursoList = cursoRepository.search(nombre, pageRequest);
+        Page<Curso> cursoList = cursoRepository.search(nombre, pageRequest);
 
-            List<Curso> cursos = cursoList.getContent()
+        List<Curso> cursos = cursoList.getContent()
                 .stream()
                 .filter(curso -> curso.isInactivo() == false)
                 .collect(Collectors.toList());
-            return ResponseEntity.status(HttpStatus.FOUND).body(cursos);
-        }
+        ResponseEntity<List<Curso>>body=ResponseEntity.status(HttpStatus.FOUND).body(cursos);
+        return body;
     }
-    //proxima mejora crear una query desde la ddbb para que se haga el filtro desde ahi
     //crear dos metodos para getAll
     @Transactional(readOnly=true)
     @Override
     public ResponseEntity<List<Curso>> findAllByPagination(
-            String pageNumber,
-            String pageSize
-    ) throws EmptyEntityListException {
-        var numPag=Integer.parseInt(pageNumber);
-        var tamPag=Integer.parseInt(pageSize);
-        if (numPag < 1 || tamPag < 1) {
-            throw new IllegalArgumentException(Message.NUMBER_EXCEPTION);
-        }else{
-            PageRequest pageRequest = PageRequest.of(numPag - 1, tamPag);
-            Page<Curso> cursosPage = cursoRepository.findAll(pageRequest);
+            QueryPageable queryPageable
+    ) throws EmptyEntityListException, BusinessRuleException {
+        PageRequest pageRequest = PageRequestConstructor.buildPageRequest(queryPageable);
+        Page<Curso> cursosPage = cursoRepository.findAll(pageRequest);
+        List<Curso> cursos = cursosPage.getContent()
+                .stream()
+                .filter(curso -> curso.isInactivo() == false)
+                .collect(Collectors.toList());
+        if (cursos.isEmpty())
+            throw new EmptyEntityListException(Message.EMPTY_LIST);
 
-            List<Curso> cursos = cursosPage.getContent()
-                    .stream()
-                    .filter(curso -> curso.isInactivo() == false)
-                    .collect(Collectors.toList());
-            if (cursos.isEmpty())
-                throw new EmptyEntityListException(Message.EMPTY_LIST);
-            return ResponseEntity.status(HttpStatus.FOUND).body(cursos);
-        }
+        ResponseEntity<List<Curso>> body=ResponseEntity.status(HttpStatus.FOUND).body(cursos);;
+        return body;
     }
 }

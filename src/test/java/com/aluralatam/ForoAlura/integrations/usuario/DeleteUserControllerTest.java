@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
 @AutoConfigureMockMvc
-public class DeleteControllerTest {
+public class DeleteUserControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -88,7 +88,7 @@ public class DeleteControllerTest {
         return repository.findById(id).orElse(null);
     }
     @Test
-    @DisplayName("Delete Ususario + HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(DeleteOne)")
     public void itShouldBeAbleToDeleteAccount()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         final Long id=usuario.getId();
@@ -108,7 +108,7 @@ public class DeleteControllerTest {
         assertNull(deleted);
     }
     @Test
-    @DisplayName("Delete Accounts + HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(DeleteMany)")
     public void itShouldBeAbleToDisableAccounts()throws Exception{
         List<Long>ids=generateUsersList();
         var remove=true;

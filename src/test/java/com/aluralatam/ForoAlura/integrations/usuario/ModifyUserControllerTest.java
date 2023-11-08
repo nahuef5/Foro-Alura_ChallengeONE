@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
 @AutoConfigureMockMvc
-public class ModifyControllerTest{
+public class ModifyUserControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -48,8 +48,16 @@ public class ModifyControllerTest{
         return pais;
     }
     private Usuario seedUsuarioInDDBB(){
-        var names=String.format("%s %s", FAKER.name().firstName(),FAKER.name().firstName());
-        var lastnames=String.format("%s %s", FAKER.name().lastName(),FAKER.name().lastName());
+        var names=String.format(
+                "%s %s",
+                FAKER.name().firstName(),
+                FAKER.name().firstName()
+        );
+        var lastnames=String.format(
+                "%s %s",
+                FAKER.name().lastName(),
+                FAKER.name().lastName()
+        );
         Instant instant=FAKER.date().birthday(18,65).toInstant();
         final LocalDate born=instant.atZone(ZoneId.systemDefault()).toLocalDate();
         final String email=String.format("%s@email.com",
@@ -85,7 +93,7 @@ public class ModifyControllerTest{
         return repository.findById(id).get();
     }
     @Test
-    @DisplayName("Update-Data-Usuario+HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(EDIT-DatoPersonal)")
     public void itShouldBeAbleToUpdateUserAndReturnResponseEntity()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         final Long id=usuario.getId();
@@ -124,7 +132,7 @@ public class ModifyControllerTest{
         assertEquals(city,updated.getDato().getLocalidad());
     }
     @Test
-    @DisplayName("Generate New Password+HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(NEW-Password")
     public void itShouldBeAbleToGenerateANewPassword()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         var email=usuario.getEmail();
@@ -144,7 +152,7 @@ public class ModifyControllerTest{
         assertEquals(password, updated.getContrasena());
     }
     @Test
-    @DisplayName("Disable Account + HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(DisableOne)")
     public void itShouldBeAbleToDisableAccount()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         final Long id=usuario.getId();
@@ -163,7 +171,7 @@ public class ModifyControllerTest{
         assertEquals(false, updated.isActivo());
     }
     @Test
-    @DisplayName("Disable Accounts + HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(DisableMany)")
     public void itShouldBeAbleToDisableAccounts()throws Exception{
         List<Long>ids=generateUsersList();
         var remove=true;
@@ -193,7 +201,7 @@ public class ModifyControllerTest{
         );
     }
     @Test
-    @DisplayName("Reactivate Account + HttpStatus")
+    @DisplayName("Retorna_ResponseEntity_Body:Response(ReactiveAccount)")
     public void itShouldBeAbleToReactivateAccount()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         final String email=usuario.getEmail();

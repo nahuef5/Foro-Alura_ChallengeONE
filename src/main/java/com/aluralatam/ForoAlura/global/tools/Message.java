@@ -9,7 +9,7 @@ public class Message {
     public static final String UPDATED="RECURSO MODIFICADO EXITOSAMENTE.";
     public static final String NOT_CONFIRMED="RECURSO NO MODIFICADO.";
     public static final String ELIMINATED="ELIMINADO EXITOSAMENTE.";
-    public static final String NUMBER_EXCEPTION="Numero de pagina y longitud deben ser enteros y positivos.";
+    public static final String NUMBER_EXCEPTION="El valor debe numerico y ser mayor a 1.";
     public static final String RESOURCE_ALREADY_INACTIVED ="ESE RECURSO SE ENCUENTRA INACTIVO";
     public static final String RESOURCE_ALREADY_ACTIVED ="ESE RECURSO SE ENCUENTRA ACTIVO";
     public static final String REACTIVATED_RESOURCE ="RECURSO REACTIVADO EXITOSAMENTE";

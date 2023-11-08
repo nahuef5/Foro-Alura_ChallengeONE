@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @TestPropertySource(locations="classpath:application-it.properties")
 @AutoConfigureMockMvc
-public class ReadControllerTest{
+public class ReadUserControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -65,14 +65,25 @@ public class ReadControllerTest{
         Usuario usuario=new Usuario(createUser);
         return repository.save(usuario);
     }
-
+    private void saveUsersToTest(){
+        var i=0;
+        while(i<=6){
+            if(i<4){
+                seedUsuarioInDDBB();
+            }else {
+                Usuario u=seedUsuarioInDDBB();
+                repository.setInactiveToUser(u.getId());
+            }
+            i++;
+        }
+    }
     @BeforeEach
     void setUp() {
         repository.deleteAll();
     }
 
     @Test
-    @DisplayName("Obtiene Usuario x Email")
+    @DisplayName("Retorna_ResponseEntity_Body:Usuario(EMAIL)")
     public void itShouldBeAblegGetAUserByEmail()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         var email=usuario.getEmail();
@@ -91,7 +102,7 @@ public class ReadControllerTest{
         assertEquals(usuario.getEmail(), response.getEmail());
     }
     @Test
-    @DisplayName("Obtiene Usuario x Id")
+    @DisplayName("Retorna_ResponseEntity_Body:Usuario(ID)")
     public void itShouldBeAblegGetAUserById()throws Exception{
         Usuario usuario=seedUsuarioInDDBB();
         var id=usuario.getId();
@@ -107,20 +118,8 @@ public class ReadControllerTest{
         Usuario response=objectMapper.readValue(contentAsString,Usuario.class);
         assertEquals(usuario, response);
     }
-    private void saveUsersToTest(){
-        var i=0;
-        while(i<=6){
-            if(i<4){
-                seedUsuarioInDDBB();
-            }else {
-                Usuario u=seedUsuarioInDDBB();
-                repository.setInactiveToUser(u.getId());
-            }
-            i++;
-        }
-    }
     @Test
-    @DisplayName("Retorna List<Usuario(Activos)> x Nombre-Apellido")
+    @DisplayName("Retorna_ResponseEntity_Body:(ACTIVO)Lista<Usuario>(Nombre-Apellido)")
     public void itShouldBeAbleToGetActiveUsersByNameOrLastWithPagination()throws Exception{
         saveUsersToTest();
         ByParameterDto dto=new ByParameterDto(NOMBRE);
@@ -143,7 +142,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertEquals(NOMBRE,user.getDato().getNombre()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario(Inactivos)> x Nombre-Apellido")
+    @DisplayName("Retorna_ResponseEntity_Body:(INACTIVO)Lista<Usuario>(Nombre-Apellido)")
     public void itShouldBeAbleToGetInactiveUsersByNameOrLastWithPagination()throws Exception{
         saveUsersToTest();
         ByParameterDto dto=new ByParameterDto(APELLIDO);
@@ -166,7 +165,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertEquals(APELLIDO,user.getDato().getApellido()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario> x Activo==TRUE")
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(TRUE)")
     public void itShouldBeAblegGetAUsersByActivoEqualTrue()throws Exception{
         final boolean activo=true;
         saveUsersToTest();
@@ -188,7 +187,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertTrue(user.isActivo()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario> x Activo==FALSE")
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(FALSE)")
     public void itShouldBeAblegGetAUsersByActivoEqualFalse()throws Exception{
         final boolean activo=false;
         saveUsersToTest();
@@ -210,7 +209,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertFalse(user.isActivo()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario> x Pais")
+    @DisplayName("Retorna_ResponseEntity_Body:Lista<Usuario>(PAIS)")
     public void itShouldBeAbleToGetUsersByCountryWithPagination()throws Exception{
         saveUsersToTest();
         ByParameterDto dto=new ByParameterDto(PAIS);
@@ -232,7 +231,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertEquals(PAIS,user.getDato().getPais()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario(Activos)> x Pais")
+    @DisplayName("Retorna_ResponseEntity_Body:(ACTIVO)Lista<Usuario>(PAIS)")
     public void itShouldBeAbleToGetActiveUsersByCountryWithPagination()throws Exception{
         ByParameterDto dto=new ByParameterDto(PAIS);
         saveUsersToTest();
@@ -254,7 +253,7 @@ public class ReadControllerTest{
         actual.forEach(user -> assertEquals(PAIS,user.getDato().getPais()));
     }
     @Test
-    @DisplayName("Retorna List<Usuario(Inactivos)> x Pais")
+    @DisplayName("Retorna_ResponseEntity_Body:(INACTIVO)Lista<Usuario>(PAIS)")
     public void itShouldBeAbleToGetInactiveUsersByCountryWithPagination()throws Exception{
         ByParameterDto dto=new ByParameterDto(PAIS);
         saveUsersToTest();

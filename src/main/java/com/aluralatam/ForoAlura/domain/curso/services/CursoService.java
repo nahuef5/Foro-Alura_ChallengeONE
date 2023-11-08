@@ -2,6 +2,7 @@ package com.aluralatam.ForoAlura.domain.curso.services;
 import com.aluralatam.ForoAlura.domain.curso.models.dtos.*;
 import com.aluralatam.ForoAlura.domain.curso.models.entity.Curso;
 import com.aluralatam.ForoAlura.global.exceptions.*;
+import com.aluralatam.ForoAlura.global.tools.QueryPageable;
 import com.aluralatam.ForoAlura.global.tools.Response;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
@@ -15,7 +16,7 @@ public interface CursoService{
             throws ResourceNotFoundException, BusinessRuleException, AccountActivationException;
     public ResponseEntity<Response> activate(Long id) throws AccountActivationException, ResourceNotFoundException;
     public ResponseEntity<Curso> findById(Long id) throws ResourceNotFoundException;
-    public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria) throws ResourceNotFoundException;
-    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(String nombre, String pageNumber,String pageSize) throws ResourceNotFoundException;
-    public ResponseEntity<List<Curso>> findAllByPagination(String pageNumber, String pageSize) throws EmptyEntityListException;
+    public ResponseEntity<Curso> findByNombreAndCategoria(String nombre, String categoria) throws ResourceNotFoundException, BusinessRuleException;
+    public ResponseEntity<List<Curso>> findAllByNombreAndPagination(String nombre, QueryPageable queryPageable) throws ResourceNotFoundException, BusinessRuleException;
+    public ResponseEntity<List<Curso>> findAllByPagination(QueryPageable queryPageable) throws EmptyEntityListException, BusinessRuleException;
 }

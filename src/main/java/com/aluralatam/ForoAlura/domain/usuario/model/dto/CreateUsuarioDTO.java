@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 public record CreateUsuarioDTO(
     @NotNull
     @Valid
-    CreateDatoPersonalDTO datosPersonalesDto,
+    CreateDatoPersonalDTO datosPersonales,
     @NotBlank
     @Email
     String email,
